@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Cookie, HTTPException, Response
 from backend.models.auth import LoginRequest, AuthStatus
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -25,8 +25,7 @@ def login(body: LoginRequest, response: Response):
 
 
 @router.post("/logout")
-def logout(response: Response, session: str | None = None):
-    from fastapi import Cookie
+def logout(response: Response, session: str | None = Cookie(None)):
     if session:
         get_auth().logout(session)
     response.delete_cookie("session")
