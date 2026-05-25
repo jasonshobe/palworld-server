@@ -1,0 +1,17 @@
+services:
+  palworld:
+    build: .
+    ports:
+      - "${CONTROLLER_PORT:-8080}:${CONTROLLER_PORT:-8080}"
+      - "8211:8211/udp"
+      - "27015:27015/udp"
+    volumes:
+      - palworld-data:/palworld
+    environment:
+      - CONTROLLER_PASSWORD=${CONTROLLER_PASSWORD:-}
+      - CONTROLLER_PORT=${CONTROLLER_PORT:-8080}
+      - PALWORLD_OPTS=${PALWORLD_OPTS:-}
+    restart: unless-stopped
+
+volumes:
+  palworld-data:
