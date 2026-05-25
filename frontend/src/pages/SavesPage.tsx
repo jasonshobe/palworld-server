@@ -75,6 +75,7 @@ export default function SavesPage() {
         <div className="col-span-2">
           {selectedPal ? (
             <PalDetail
+              key={selectedPal.instance_id}
               pal={selectedPal}
               disabled={disabled}
               onDeleted={() => setSelectedPal(null)}

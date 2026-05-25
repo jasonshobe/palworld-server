@@ -46,7 +46,13 @@ export default function PalDetail({ pal, disabled, onDeleted }: PalDetailProps) 
     patchPal(pal.instance_id, playerUid, key, value)
 
   const nicknameMut = useMutation({ mutationFn: () => patch("NickName", nickname), onSuccess: invalidate })
-  const healMut = useMutation({ mutationFn: () => patch("HasWorkerSick", false), onSuccess: invalidate })
+  const healMut = useMutation({
+    mutationFn: async () => {
+      await patch("HasWorkerSick", false)
+      await patch("IsFaintedPal", false)
+    },
+    onSuccess: invalidate,
+  })
   const deleteMut = useMutation({
     mutationFn: () => deletePal(pal.instance_id),
     onSuccess: () => { invalidate(); onDeleted() },
