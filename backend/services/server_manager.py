@@ -1,4 +1,6 @@
 import asyncio
+import os
+import shlex
 from collections import deque
 from pathlib import Path
 
@@ -67,14 +69,15 @@ class ServerManager:
         self.state = ServerState.STARTING
         self._push_log("[controller] Starting Palworld server...")
 
+        env_opts = shlex.split(os.environ.get("PALWORLD_OPTS", ""))
         args = [
             PALWORLD_BINARY,
             "-useperfthreads",
             "-NoAsyncLoadingThread",
             "-UseMultithreadForDS",
+            *(extra_args or []),
+            *env_opts,
         ]
-        if extra_args:
-            args.extend(extra_args)
 
         try:
             proc = await asyncio.create_subprocess_exec(

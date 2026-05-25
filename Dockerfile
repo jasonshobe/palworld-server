@@ -10,8 +10,8 @@ RUN npm run build
 FROM cm2network/steamcmd:latest AS runtime
 USER root
 
-RUN apt-get update && apt-get install -y \
-    python3 python3-pip python3-venv git \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-venv git \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps
@@ -29,6 +29,10 @@ COPY --from=frontend-builder /app/frontend/dist /app/backend/static
 # Entrypoint
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Pre-create /palworld so Docker named-volume init preserves steam ownership
+RUN mkdir -p /palworld && chown -R steam:steam /app /palworld
+USER steam
 
 EXPOSE 8080
 

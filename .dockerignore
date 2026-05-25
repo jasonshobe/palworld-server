@@ -1,0 +1,17 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/*.egg-info
+.venv/
+venv/
+.env
+.git
+.gitignore
+docs/
+tests/
+frontend/node_modules
+frontend/dist
+frontend/.vite
+*.log
+*.md
