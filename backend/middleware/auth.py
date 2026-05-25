@@ -27,8 +27,17 @@ class AuthMiddleware:
         return token in self._tokens
 
 
-def require_auth(auth: AuthMiddleware):
+def require_auth(auth_obj: AuthMiddleware | None = None):
+    """Return a FastAPI dependency that validates the session cookie.
+
+    Pass an explicit AuthMiddleware for tests; omit to use the app-level
+    instance from backend.main (lazy import, supports test monkeypatching).
+    """
     def dependency(session: str | None = Cookie(default=None)):
-        if not auth.is_valid(session):
+        if auth_obj is not None:
+            _auth = auth_obj
+        else:
+            from backend.main import auth as _auth
+        if not _auth.is_valid(session):
             raise HTTPException(status_code=401, detail="Unauthorized")
     return Depends(dependency)

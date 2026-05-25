@@ -69,17 +69,16 @@ class ServerManager:
         self.state = ServerState.STARTING
         self._push_log("[controller] Starting Palworld server...")
 
-        env_opts = shlex.split(os.environ.get("PALWORLD_OPTS", ""))
-        args = [
-            PALWORLD_BINARY,
-            "-useperfthreads",
-            "-NoAsyncLoadingThread",
-            "-UseMultithreadForDS",
-            *(extra_args or []),
-            *env_opts,
-        ]
-
         try:
+            env_opts = shlex.split(os.environ.get("PALWORLD_OPTS", ""))
+            args = [
+                PALWORLD_BINARY,
+                "-useperfthreads",
+                "-NoAsyncLoadingThread",
+                "-UseMultithreadForDS",
+                *(extra_args or []),
+                *env_opts,
+            ]
             proc = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,

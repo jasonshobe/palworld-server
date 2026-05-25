@@ -12,10 +12,14 @@ def _assert_stopped():
 
 
 def _get_save_manager():
-    from backend.main import save_manager
-    if save_manager is None:
-        raise HTTPException(status_code=503, detail="No save file found")
-    return save_manager
+    import backend.main as _main
+    if _main.save_manager is None:
+        try:
+            from backend.services.save_manager import SaveManager as _SM
+            _main.save_manager = _SM()
+        except RuntimeError:
+            raise HTTPException(status_code=503, detail="No save file found")
+    return _main.save_manager
 
 
 @router.get("/players", response_model=PlayersResponse)
