@@ -1,0 +1,38 @@
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from backend.middleware.auth import AuthMiddleware
+from backend.services.server_manager import ServerManager
+
+_password = os.environ.get("CONTROLLER_PASSWORD") or None
+auth = AuthMiddleware(password=_password)
+server_manager = ServerManager()
+save_manager = None  # initialized lazily on first access (save may not exist yet)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global save_manager
+    try:
+        from backend.services.save_manager import SaveManager as _SM
+        save_manager = _SM()
+    except RuntimeError:
+        pass  # No save file yet — saves endpoints return 503 until server runs
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+from backend.routers import auth as auth_router, server, config, saves  # noqa: E402
+app.include_router(auth_router.router)
+app.include_router(server.router)
+app.include_router(config.router)
+app.include_router(saves.router)
+
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
