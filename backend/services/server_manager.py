@@ -15,6 +15,7 @@ class ServerManager:
         self.state = ServerState.STOPPED
         self._process: asyncio.subprocess.Process | None = None
         self._logs: deque[str] = deque(maxlen=1000)
+        self._tail_task: asyncio.Task | None = None
 
     @property
     def logs(self) -> list[str]:
@@ -75,14 +76,18 @@ class ServerManager:
         if extra_args:
             args.extend(extra_args)
 
-        proc = await asyncio.create_subprocess_exec(
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        self._process = proc
-        self.state = ServerState.RUNNING
-        asyncio.create_task(self._tail_output(proc))
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            self._process = proc
+            self.state = ServerState.RUNNING
+            self._tail_task = asyncio.create_task(self._tail_output(proc))
+        except Exception:
+            self.state = ServerState.STOPPED
+            raise
 
     async def stop(self) -> None:
         if self.state != ServerState.RUNNING:

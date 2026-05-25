@@ -80,21 +80,6 @@ async def test_stop_terminates_process_and_sets_stopped(manager):
 
 @pytest.mark.asyncio
 async def test_update_runs_steamcmd_and_returns_to_stopped(manager):
-    lines = [b"Downloading...\n", b"Success.\n", b""]
-    line_iter = iter(lines)
-
-    mock_proc = MagicMock()
-    mock_proc.stdout.__aiter__ = AsyncMock(return_value=iter([b"Downloading...\n", b"Success.\n"]))
-
-    async def fake_aiter(self):
-        for line in [b"Downloading...\n", b"Success.\n"]:
-            yield line
-
-    mock_proc.__class__.__aiter__ = fake_aiter
-    mock_proc.wait = AsyncMock(return_value=0)
-    mock_proc.returncode = 0
-
-    # Use a simpler approach: patch stdout as an async generator
     async def mock_stdout():
         for line in [b"Downloading...\n", b"Success.\n"]:
             yield line
