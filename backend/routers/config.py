@@ -34,7 +34,8 @@ def put_config(body: ConfigUpdate):
     if controller:
         write_settings({**read_settings(), **controller})
 
-    current = read_config()
-    current.update(incoming)
-    write_config(current)
+    if incoming:
+        current = read_config()
+        current.update(incoming)
+        write_config(current)
     return {"ok": True}
