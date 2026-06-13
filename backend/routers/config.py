@@ -2,6 +2,11 @@ from fastapi import APIRouter, HTTPException
 from backend.models.config import ConfigUpdate
 from backend.models.server import ServerState
 from backend.services.config_manager import DEFAULT_SETTINGS, read_config, write_config
+from backend.services.controller_settings import (
+    CONTROLLER_KEYS,
+    read_settings,
+    write_settings,
+)
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -15,13 +20,21 @@ def _assert_stopped():
 @router.get("")
 def get_config():
     # Seed any keys absent on disk with defaults; on-disk values always win.
-    return {**DEFAULT_SETTINGS, **read_config()}
+    # Controller launch-option settings are merged in alongside the .ini fields.
+    return {**DEFAULT_SETTINGS, **read_config(), **read_settings()}
 
 
 @router.put("")
 def put_config(body: ConfigUpdate):
     _assert_stopped()
+    incoming = dict(body.settings)
+
+    # Split controller launch-option keys out of the .ini payload.
+    controller = {k: incoming.pop(k) for k in CONTROLLER_KEYS if k in incoming}
+    if controller:
+        write_settings({**read_settings(), **controller})
+
     current = read_config()
-    current.update(body.settings)
+    current.update(incoming)
     write_config(current)
     return {"ok": True}
