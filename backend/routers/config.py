@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from backend.models.config import ConfigUpdate
 from backend.models.server import ServerState
-from backend.services.config_manager import read_config, write_config
+from backend.services.config_manager import DEFAULT_SETTINGS, read_config, write_config
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -14,7 +14,8 @@ def _assert_stopped():
 
 @router.get("")
 def get_config():
-    return read_config()
+    # Seed any keys absent on disk with defaults; on-disk values always win.
+    return {**DEFAULT_SETTINGS, **read_config()}
 
 
 @router.put("")

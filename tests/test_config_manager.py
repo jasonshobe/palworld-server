@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from backend.services.config_manager import read_config, write_config
+from backend.services.config_manager import DEFAULT_SETTINGS, read_config, write_config
 
 SAMPLE_INI = """\
 [/Script/Pal.PalGameWorldSettings]
@@ -63,3 +63,30 @@ def test_write_creates_parent_dirs(tmp_path):
     path = tmp_path / "deep" / "nested" / "PalWorldSettings.ini"
     write_config(cfg, path)
     assert path.exists()
+
+
+def test_default_settings_applies_overrides():
+    assert DEFAULT_SETTINGS["ServerName"] == "My PalWorld Server"
+    assert DEFAULT_SETTINGS["ServerDescription"] == "My PalWorld Server"
+    assert DEFAULT_SETTINGS["AdminPassword"] == ""
+    assert DEFAULT_SETTINGS["ServerPassword"] == "changeme"
+
+
+def test_default_settings_come_from_ini():
+    assert DEFAULT_SETTINGS["Difficulty"] == "None"
+    assert DEFAULT_SETTINGS["DayTimeSpeedRate"] == pytest.approx(1.0)
+    assert DEFAULT_SETTINGS["ServerPlayerMaxNum"] == 16
+    assert DEFAULT_SETTINGS["RESTAPIEnabled"] is True
+    assert DEFAULT_SETTINGS["bEnableInvaderEnemy"] is True
+    assert DEFAULT_SETTINGS["CrossplayPlatforms"] == "(Steam,Xbox,PS5,Mac)"
+
+
+def test_default_settings_round_trips_through_writer(tmp_path):
+    out = tmp_path / "out.ini"
+    write_config(DEFAULT_SETTINGS, out)
+    parsed = read_config(out)
+    assert parsed["ServerPassword"] == "changeme"
+    assert parsed["DayTimeSpeedRate"] == pytest.approx(1.0)
+    assert parsed["ServerPlayerMaxNum"] == 16
+    assert parsed["RESTAPIEnabled"] is True
+    assert parsed["CrossplayPlatforms"] == "(Steam,Xbox,PS5,Mac)"
