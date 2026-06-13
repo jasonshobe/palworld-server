@@ -6,11 +6,22 @@ import { Slider } from "@/components/ui/slider"
 export type FieldMeta = {
   key: string
   label: string
-  type: "float" | "int" | "bool" | "string" | "enum" | "number"
+  type: "float" | "int" | "bool" | "string" | "enum" | "number" | "multiselect"
   min?: number
   max?: number
   step?: number
   options?: string[]
+}
+
+// CrossplayPlatforms is stored as a parenthesized tuple, e.g. "(Steam,Xbox,PS5,Mac)".
+function parseTuple(raw: unknown): string[] {
+  const s = String(raw ?? "").trim()
+  const inner = s.startsWith("(") && s.endsWith(")") ? s.slice(1, -1) : s
+  return inner ? inner.split(",").map((v) => v.trim()).filter(Boolean) : []
+}
+
+function formatTuple(values: string[]): string {
+  return `(${values.join(",")})`
 }
 
 interface ConfigFieldProps {
@@ -64,6 +75,32 @@ export default function ConfigField({ meta, value, onChange, disabled }: ConfigF
             disabled={disabled}
             className="h-7 text-sm"
           />
+        )}
+        {type === "multiselect" && (
+          <div className="flex flex-wrap justify-end gap-x-3 gap-y-1">
+            {meta.options?.map((opt) => {
+              const selected = parseTuple(value)
+              const checked = selected.includes(opt)
+              return (
+                <label key={opt} className="flex items-center gap-1 text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...selected, opt]
+                        : selected.filter((v) => v !== opt)
+                      // Preserve the declared option order for a stable serialization.
+                      const ordered = meta.options?.filter((o) => next.includes(o)) ?? next
+                      onChange(key, formatTuple(ordered))
+                    }}
+                  />
+                  {opt}
+                </label>
+              )
+            })}
+          </div>
         )}
         {type === "enum" && (
           <select
