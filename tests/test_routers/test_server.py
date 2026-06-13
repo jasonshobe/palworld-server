@@ -55,3 +55,25 @@ def test_update_returns_409_when_running(client, mock_manager):
     mock_manager.update = AsyncMock(side_effect=RuntimeError("must be stopped"))
     resp = client.post("/api/server/update")
     assert resp.status_code == 409
+
+
+def test_start_passes_launch_args_from_controller_settings(client, mock_manager):
+    import backend.main as main_mod
+    main_mod.server_manager = mock_manager
+    mock_manager.start = AsyncMock()
+    with patch("backend.routers.server.read_settings",
+               return_value={"community": True, "query_port": 27015}):
+        resp = client.post("/api/server/start")
+    assert resp.status_code == 200
+    mock_manager.start.assert_called_once_with(["-publiclobby", "-queryport=27015"])
+
+
+def test_start_passes_empty_args_when_no_options(client, mock_manager):
+    import backend.main as main_mod
+    main_mod.server_manager = mock_manager
+    mock_manager.start = AsyncMock()
+    with patch("backend.routers.server.read_settings",
+               return_value={"community": False, "query_port": None}):
+        resp = client.post("/api/server/start")
+    assert resp.status_code == 200
+    mock_manager.start.assert_called_once_with([])

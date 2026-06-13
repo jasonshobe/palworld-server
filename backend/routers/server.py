@@ -1,5 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from backend.models.server import ServerState, ServerStatus
+from backend.services.controller_settings import read_settings, build_launch_args
 
 router = APIRouter(prefix="/api/server", tags=["server"])
 
@@ -20,7 +21,8 @@ async def start(background_tasks: BackgroundTasks):
     mgr = get_manager()
     if mgr.state != ServerState.STOPPED:
         raise HTTPException(status_code=409, detail=f"Cannot start: server is {mgr.state}")
-    background_tasks.add_task(mgr.start)
+    extra_args = build_launch_args(read_settings())
+    background_tasks.add_task(mgr.start, extra_args)
     return {"ok": True}
 
 
