@@ -19,9 +19,10 @@ def _assert_stopped():
 
 @router.get("")
 def get_config():
-    # Seed any keys absent on disk with defaults; on-disk values always win.
-    # Controller launch-option settings are merged in alongside the .ini fields.
-    return {**DEFAULT_SETTINGS, **read_config(), **read_settings()}
+    # Seed any keys absent on disk with defaults. Controller launch-option
+    # settings are merged in alongside the .ini fields; the .ini is applied last
+    # so a future PalWorldSettings key can never be shadowed by the store.
+    return {**DEFAULT_SETTINGS, **read_settings(), **read_config()}
 
 
 @router.put("")

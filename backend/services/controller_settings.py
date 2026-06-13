@@ -4,11 +4,12 @@ from typing import Any
 
 CONTROLLER_SETTINGS_PATH = Path("/palworld/controller-settings.json")
 
-# Keys this store owns. The config router uses this to split them out of the
-# PalWorldSettings.ini payload so they are never written to the .ini.
-CONTROLLER_KEYS = {"community", "query_port"}
-
 DEFAULTS: dict[str, Any] = {"community": False, "query_port": None}
+
+# Keys this store owns, derived from DEFAULTS so the two can't drift. The config
+# router uses this to split them out of the PalWorldSettings.ini payload so they
+# are never written to the .ini.
+CONTROLLER_KEYS = set(DEFAULTS)
 
 
 def _normalize(settings: dict[str, Any]) -> dict[str, Any]:
@@ -21,9 +22,10 @@ def _normalize(settings: dict[str, Any]) -> dict[str, Any]:
             result["query_port"] = None
         else:
             try:
-                result["query_port"] = int(qp)
+                qp = int(qp)
             except (TypeError, ValueError):
-                result["query_port"] = None
+                qp = None
+            result["query_port"] = qp if (qp is not None and qp >= 1) else None
     return result
 
 

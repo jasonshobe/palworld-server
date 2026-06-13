@@ -58,3 +58,9 @@ def test_build_launch_args_both():
 
 def test_build_launch_args_ignores_blank_query_port():
     assert cs.build_launch_args({"community": False, "query_port": ""}) == []
+
+
+def test_write_normalizes_zero_query_port_to_none(tmp_path):
+    p = tmp_path / "controller-settings.json"
+    cs.write_settings({"query_port": 0}, p)
+    assert cs.read_settings(p)["query_port"] is None
