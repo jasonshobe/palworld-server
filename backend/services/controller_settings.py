@@ -50,5 +50,5 @@ def build_launch_args(settings: dict[str, Any]) -> list[str]:
         args.append("-publiclobby")
     qp = settings.get("query_port")
     if qp not in (None, ""):
-        args.append(f"-queryport={int(qp)}")
+        args.append(f"-queryport={qp}")
     return args
