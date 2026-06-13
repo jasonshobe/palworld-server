@@ -24,9 +24,11 @@ def test_start_calls_manager(client, mock_manager):
     import backend.main as main_mod
     main_mod.server_manager = mock_manager
     mock_manager.start = AsyncMock()
-    resp = client.post("/api/server/start")
+    with patch("backend.routers.server.read_settings",
+               return_value={"community": False, "query_port": None}):
+        resp = client.post("/api/server/start")
     assert resp.status_code == 200
-    mock_manager.start.assert_called_once()
+    mock_manager.start.assert_called_once_with([])
 
 
 def test_stop_calls_manager(client, mock_manager):
