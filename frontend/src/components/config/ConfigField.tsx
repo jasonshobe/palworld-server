@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider"
 export type FieldMeta = {
   key: string
   label: string
-  type: "float" | "int" | "bool" | "string" | "enum"
+  type: "float" | "int" | "bool" | "string" | "enum" | "number"
   min?: number
   max?: number
   step?: number
@@ -47,6 +47,15 @@ export default function ConfigField({ meta, value, onChange, disabled }: ConfigF
             />
             <span className="text-xs w-10 text-right">{Number(value ?? meta.min).toFixed(type === "float" ? 1 : 0)}</span>
           </div>
+        )}
+        {type === "number" && (
+          <Input
+            type="number"
+            value={String(value ?? "")}
+            onChange={(e) => onChange(key, e.target.value === "" ? "" : Number(e.target.value))}
+            disabled={disabled}
+            className="h-7 text-sm"
+          />
         )}
         {type === "string" && (
           <Input
