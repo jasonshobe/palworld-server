@@ -11,6 +11,27 @@ def test_get_config_returns_dict(client):
     assert resp.json()["DayTimeSpeedRate"] == pytest.approx(1.0)
 
 
+def test_get_config_fills_defaults_when_no_file(client):
+    with patch("backend.routers.config.read_config", return_value={}):
+        resp = client.get("/api/config")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ServerName"] == "My PalWorld Server"
+    assert body["ServerPassword"] == "changeme"
+    assert body["AdminPassword"] == ""
+    assert body["DayTimeSpeedRate"] == pytest.approx(1.0)
+
+
+def test_get_config_disk_values_override_defaults(client):
+    with patch("backend.routers.config.read_config", return_value={"ServerName": "On Disk"}):
+        resp = client.get("/api/config")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ServerName"] == "On Disk"
+    # keys absent on disk still come from defaults
+    assert body["ServerPassword"] == "changeme"
+
+
 def test_put_config_merges_and_writes(client):
     existing = {"DayTimeSpeedRate": 1.0, "ServerName": "Old Name"}
     update = {"ServerName": "New Name"}
