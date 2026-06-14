@@ -124,3 +124,37 @@ def test_patch_pal_maps_value_error_to_404(client, mock_save_manager):
         json={"player_uid": "uid-1", "key": "Level", "value": 5},
     )
     assert resp.status_code == 404
+
+
+def test_data_passives_endpoint(client, monkeypatch):
+    from backend.services import pal_data
+    monkeypatch.setattr(
+        pal_data, "get_passives",
+        lambda: [{"internal_name": "PassiveSkill_Legend", "label": "Legend", "rating": 3}],
+    )
+    resp = client.get("/api/saves/data/passives")
+    assert resp.status_code == 200
+    assert resp.json()[0]["internal_name"] == "PassiveSkill_Legend"
+    assert resp.json()[0]["rating"] == 3
+
+
+def test_data_active_skills_endpoint(client, monkeypatch):
+    from backend.services import pal_data
+    monkeypatch.setattr(
+        pal_data, "get_active_skills",
+        lambda: [{
+            "internal_name": "EPalWazaID::Fire_FlareArrow", "label": "Flare Arrow",
+            "element": "Fire", "power": 35, "has_fruit": True, "is_unique": False, "invalid": False,
+        }],
+    )
+    resp = client.get("/api/saves/data/active-skills")
+    assert resp.status_code == 200
+    assert resp.json()[0]["element"] == "Fire"
+
+
+def test_data_suitabilities_endpoint(client, monkeypatch):
+    from backend.services import pal_data
+    monkeypatch.setattr(pal_data, "get_suitabilities", lambda: ["Watering", "Mining"])
+    resp = client.get("/api/saves/data/suitabilities")
+    assert resp.status_code == 200
+    assert resp.json() == ["Watering", "Mining"]

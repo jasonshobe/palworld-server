@@ -1,6 +1,14 @@
 from fastapi import APIRouter, HTTPException, Query
 from backend.models.server import ServerState
-from backend.models.saves import PlayersResponse, PlayerSummary, PalSummary, PalPatch
+from backend.models.saves import (
+    PlayersResponse,
+    PlayerSummary,
+    PalSummary,
+    PalPatch,
+    PassiveOption,
+    ActiveSkillOption,
+)
+from backend.services import pal_data
 
 router = APIRouter(prefix="/api/saves", tags=["saves"])
 
@@ -66,6 +74,21 @@ def get_pals(player_uid: str = Query(...)):
         )
         for p in pals
     ]
+
+
+@router.get("/data/passives", response_model=list[PassiveOption])
+def data_passives():
+    return pal_data.get_passives()
+
+
+@router.get("/data/active-skills", response_model=list[ActiveSkillOption])
+def data_active_skills():
+    return pal_data.get_active_skills()
+
+
+@router.get("/data/suitabilities", response_model=list[str])
+def data_suitabilities():
+    return pal_data.get_suitabilities()
 
 
 @router.get("/pals/{instance_id}")
