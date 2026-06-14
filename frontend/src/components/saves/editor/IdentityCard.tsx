@@ -53,9 +53,9 @@ export default function IdentityCard({ detail, patch, disabled }: IdentityCardPr
 
       <div className="flex items-center justify-between">
         <Label className="text-sm">Friendship Level</Label>
-        <Input type="number" min={0} defaultValue={detail.friendship_level}
+        <Input type="number" min={0} max={10} defaultValue={detail.friendship_level}
           disabled={disabled}
-          onBlur={(e) => patch("FriendshipLevel", Math.max(0, Math.round(Number(e.target.value))))}
+          onBlur={(e) => patch("FriendshipLevel", Math.min(10, Math.max(0, Math.round(Number(e.target.value)))))}
           className="h-7 text-sm w-24" />
       </div>
 
