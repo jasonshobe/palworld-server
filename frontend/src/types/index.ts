@@ -82,6 +82,11 @@ export interface ActiveSkillOption {
   invalid: boolean
 }
 
+export interface SpeciesOption {
+  internal_name: string
+  label: string
+}
+
 export interface ModInfo {
   path: string
   size: number
