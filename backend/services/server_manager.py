@@ -96,6 +96,8 @@ class ServerManager:
         self._push_log("[controller] Starting Palworld server...")
 
         try:
+            import backend.main as _main
+            _main.mod_manager.sync(self._push_log)
             env_opts = shlex.split(os.environ.get("PALWORLD_OPTS", ""))
             args = [
                 PALWORLD_BINARY,

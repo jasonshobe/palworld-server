@@ -6,11 +6,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from backend.middleware.auth import AuthMiddleware, require_auth
+from backend.services.mod_manager import ModManager
 from backend.services.server_manager import ServerManager
 
 _password = os.environ.get("CONTROLLER_PASSWORD") or None
 auth = AuthMiddleware(password=_password)
 server_manager = ServerManager()
+mod_manager = ModManager()
 save_manager = None  # initialized lazily on first access (save may not exist yet)
 
 
