@@ -48,6 +48,8 @@ const SECTIONS: { title: string; fields: FieldMeta[] }[] = [
       { key: "RCONPort", label: "RCON Port", type: "number" },
       { key: "RESTAPIEnabled", label: "Enable REST API", type: "bool" },
       { key: "RESTAPIPort", label: "REST API Port", type: "number" },
+      { key: "community", label: "List in Community Server Browser", type: "bool" },
+      { key: "query_port", label: "Steam Query Port", type: "number" },
     ],
   },
   {

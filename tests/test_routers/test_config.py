@@ -5,14 +5,16 @@ from backend.models.server import ServerState
 
 def test_get_config_returns_dict(client):
     sample = {"DayTimeSpeedRate": 1.0, "ServerName": "Test"}
-    with patch("backend.routers.config.read_config", return_value=sample):
+    with patch("backend.routers.config.read_config", return_value=sample), \
+         patch("backend.routers.config.read_settings", return_value={}):
         resp = client.get("/api/config")
     assert resp.status_code == 200
     assert resp.json()["DayTimeSpeedRate"] == pytest.approx(1.0)
 
 
 def test_get_config_fills_defaults_when_no_file(client):
-    with patch("backend.routers.config.read_config", return_value={}):
+    with patch("backend.routers.config.read_config", return_value={}), \
+         patch("backend.routers.config.read_settings", return_value={}):
         resp = client.get("/api/config")
     assert resp.status_code == 200
     body = resp.json()
@@ -23,7 +25,8 @@ def test_get_config_fills_defaults_when_no_file(client):
 
 
 def test_get_config_disk_values_override_defaults(client):
-    with patch("backend.routers.config.read_config", return_value={"ServerName": "On Disk"}):
+    with patch("backend.routers.config.read_config", return_value={"ServerName": "On Disk"}), \
+         patch("backend.routers.config.read_settings", return_value={}):
         resp = client.get("/api/config")
     assert resp.status_code == 200
     body = resp.json()
@@ -53,3 +56,56 @@ def test_put_config_returns_409_when_server_running(client):
     main_mod.server_manager = m
     resp = client.put("/api/config", json={"settings": {}})
     assert resp.status_code == 409
+
+
+def test_get_config_includes_controller_settings(client):
+    with patch("backend.routers.config.read_config", return_value={}), \
+         patch("backend.routers.config.read_settings",
+               return_value={"community": True, "query_port": 27015}):
+        resp = client.get("/api/config")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["community"] is True
+    assert body["query_port"] == 27015
+
+
+def test_put_config_routes_controller_keys_to_store_not_ini(client):
+    update = {"ServerName": "New Name", "community": True, "query_port": 27015}
+    with patch("backend.routers.config.read_config", return_value={}), \
+         patch("backend.routers.config.write_config") as mock_write_config, \
+         patch("backend.routers.config.read_settings",
+               return_value={"community": False, "query_port": None}), \
+         patch("backend.routers.config.write_settings") as mock_write_settings:
+        resp = client.put("/api/config", json={"settings": update})
+    assert resp.status_code == 200
+
+    mock_write_settings.assert_called_once()
+    stored = mock_write_settings.call_args[0][0]
+    assert stored["community"] is True
+    assert stored["query_port"] == 27015
+
+    written_ini = mock_write_config.call_args[0][0]
+    assert "community" not in written_ini
+    assert "query_port" not in written_ini
+    assert written_ini["ServerName"] == "New Name"
+
+
+def test_put_config_without_controller_keys_skips_store_write(client):
+    with patch("backend.routers.config.read_config", return_value={}), \
+         patch("backend.routers.config.write_config"), \
+         patch("backend.routers.config.write_settings") as mock_write_settings:
+        resp = client.put("/api/config", json={"settings": {"ServerName": "X"}})
+    assert resp.status_code == 200
+    mock_write_settings.assert_not_called()
+
+
+def test_put_config_with_only_controller_keys_skips_ini_write(client):
+    with patch("backend.routers.config.read_config") as mock_read_config, \
+         patch("backend.routers.config.write_config") as mock_write_config, \
+         patch("backend.routers.config.read_settings",
+               return_value={"community": False, "query_port": None}), \
+         patch("backend.routers.config.write_settings"):
+        resp = client.put("/api/config", json={"settings": {"community": True}})
+    assert resp.status_code == 200
+    mock_write_config.assert_not_called()
+    mock_read_config.assert_not_called()
