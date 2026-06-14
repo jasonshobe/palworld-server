@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { getPlayers, getPals, commitSave } from "@/api/saves"
 import { useServerStatus } from "@/hooks/useServerStatus"
 import PalList from "@/components/saves/PalList"
@@ -27,7 +28,13 @@ export default function SavesPage() {
 
   const commitMut = useMutation({
     mutationFn: commitSave,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pals"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pals"] })
+      toast.success("Changes saved to disk")
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Failed to save changes to disk")
+    },
   })
 
   return (
