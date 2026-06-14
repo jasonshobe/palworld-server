@@ -37,6 +37,9 @@ export default function ModsPage() {
             <p className="text-sm text-red-400">{(upload.error as Error).message}</p>
           )}
           <ModList mods={data?.mods ?? []} onDelete={(p) => remove.mutate(p)} />
+          {remove.isError && (
+            <p className="text-sm text-red-400">{(remove.error as Error).message}</p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -18,6 +18,7 @@ export default function UploadForm({ onUpload, disabled }: Props) {
         if (file) {
           onUpload(file, subfolder.trim())
           setFile(null)
+          setSubfolder("")
           ;(e.target as HTMLFormElement).reset()
         }
       }}
