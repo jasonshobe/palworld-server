@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+import { GENDERS } from "@/lib/gender"
 
 interface IdentityCardProps {
   detail: PalDetailData
@@ -46,8 +47,7 @@ export default function IdentityCard({ detail, patch, disabled }: IdentityCardPr
         <select value={detail.gender ?? ""} disabled={disabled}
           onChange={(e) => patch("Gender", e.target.value)}
           className="h-7 bg-slate-800 border border-slate-600 rounded px-2 text-sm">
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
+          {GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
         </select>
       </div>
 

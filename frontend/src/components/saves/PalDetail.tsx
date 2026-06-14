@@ -4,6 +4,7 @@ import { getPal, deletePal } from "@/api/saves"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { genderLabel, genderSymbol } from "@/lib/gender"
 import { usePalPatch } from "@/hooks/usePalPatch"
 import { usePassives, useActiveSkills, useSuitabilities } from "@/hooks/useReferenceData"
 import IdentityCard from "./editor/IdentityCard"
@@ -50,7 +51,11 @@ export default function PalDetail({ pal, disabled, onDeleted }: PalDetailProps) 
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           {detail.display_name ?? detail.instance_id}
-          {!!detail.gender && <Badge variant="outline" className="text-xs">{detail.gender}</Badge>}
+          {genderLabel(detail.gender) && (
+            <Badge variant="outline" className="text-xs" title={genderLabel(detail.gender)} aria-label={genderLabel(detail.gender)}>
+              {genderSymbol(detail.gender)}
+            </Badge>
+          )}
           {detail.is_fainted && <Badge variant="destructive" className="text-xs">Fainted</Badge>}
           {detail.has_worker_sick && <Badge variant="destructive" className="text-xs">Sick</Badge>}
         </CardTitle>
