@@ -7,6 +7,7 @@ services:
       - "27015:27015/udp"
     volumes:
       - palworld-data:/palworld
+      - mods-data:/mods
     environment:
       - CONTROLLER_PASSWORD=${CONTROLLER_PASSWORD:-}
       - CONTROLLER_PORT=${CONTROLLER_PORT:-8080}
@@ -15,3 +16,4 @@ services:
 
 volumes:
   palworld-data:
+  mods-data:

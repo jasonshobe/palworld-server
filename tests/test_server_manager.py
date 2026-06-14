@@ -49,6 +49,7 @@ async def test_update_raises_if_not_stopped(manager):
 
 @pytest.mark.asyncio
 async def test_start_sets_running_state(manager, tmp_path):
+    import backend.main as main
     binary = tmp_path / "PalServer.sh"
     binary.touch()
 
@@ -58,7 +59,8 @@ async def test_start_sets_running_state(manager, tmp_path):
     mock_proc.returncode = 0
 
     with patch("backend.services.server_manager.PALWORLD_BINARY", str(binary)), \
-         patch("asyncio.create_subprocess_exec", return_value=mock_proc):
+         patch("asyncio.create_subprocess_exec", return_value=mock_proc), \
+         patch.object(main, "mod_manager", MagicMock()):
         await manager.start()
 
     assert manager.state == ServerState.RUNNING
@@ -140,3 +142,24 @@ async def test_update_raises_after_exhausting_retries(manager):
 def test_push_log_strips_ansi_color_codes(manager):
     manager._push_log("Loading Steam API...\x1b[0mOK\x1b[0m")
     assert manager.logs[-1] == "Loading Steam API...OK"
+
+
+@pytest.mark.asyncio
+async def test_start_syncs_mods_before_launch(manager, tmp_path):
+    import backend.main as main
+    binary = tmp_path / "PalServer.sh"
+    binary.touch()
+
+    mock_proc = MagicMock()
+    mock_proc.stdout.readline = AsyncMock(return_value=b"")
+    mock_proc.wait = AsyncMock(return_value=0)
+    mock_proc.returncode = 0
+    mock_mods = MagicMock()
+
+    with patch("backend.services.server_manager.PALWORLD_BINARY", str(binary)), \
+         patch("asyncio.create_subprocess_exec", return_value=mock_proc), \
+         patch.object(main, "mod_manager", mock_mods):
+        await manager.start()
+
+    mock_mods.sync.assert_called_once_with(manager._push_log)
+    assert manager.state == ServerState.RUNNING

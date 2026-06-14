@@ -41,6 +41,15 @@ export default function NavBar({ serverState, onLogout, authRequired }: NavBarPr
               {tab === "config" ? "Configuration" : "Saves"}
             </NavLink>
           ))}
+          <NavLink
+            to="/mods"
+            className={({ isActive }) =>
+              cn("px-3 py-1.5 rounded text-sm transition-colors",
+                isActive ? "bg-slate-700" : "hover:bg-slate-800")
+            }
+          >
+            Mods
+          </NavLink>
         </div>
         {authRequired && (
           <button

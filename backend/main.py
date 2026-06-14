@@ -6,11 +6,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from backend.middleware.auth import AuthMiddleware, require_auth
+from backend.services.mod_manager import ModManager
 from backend.services.server_manager import ServerManager
 
 _password = os.environ.get("CONTROLLER_PASSWORD") or None
 auth = AuthMiddleware(password=_password)
 server_manager = ServerManager()
+mod_manager = ModManager()
 save_manager = None  # initialized lazily on first access (save may not exist yet)
 
 
@@ -27,13 +29,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-from backend.routers import auth as auth_router, server, config, saves  # noqa: E402
+from backend.routers import auth as auth_router, server, config, saves, mods  # noqa: E402
 
 _protected = [require_auth()]
 app.include_router(auth_router.router)
 app.include_router(server.router, dependencies=_protected)
 app.include_router(config.router, dependencies=_protected)
 app.include_router(saves.router, dependencies=_protected)
+app.include_router(mods.router, dependencies=_protected)
 
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():

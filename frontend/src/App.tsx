@@ -7,6 +7,7 @@ import LoginPage from "@/pages/LoginPage"
 import ServerPage from "@/pages/ServerPage"
 import ConfigPage from "@/pages/ConfigPage"
 import SavesPage from "@/pages/SavesPage"
+import ModsPage from "@/pages/ModsPage"
 
 const queryClient = new QueryClient()
 
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="server" element={<ServerPage />} />
                 <Route path="config" element={<ConfigPage />} />
                 <Route path="saves" element={<SavesPage />} />
+                <Route path="mods" element={<ModsPage />} />
               </Route>
             </Routes>
           </AuthGate>
