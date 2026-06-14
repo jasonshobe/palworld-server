@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { PalSummary, PalDetailData } from "@/types"
-import { getPal, deletePal } from "@/api/saves"
+import { getPal, deletePal, duplicatePal } from "@/api/saves"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -40,6 +41,15 @@ export default function PalDetail({ pal, disabled, onDeleted }: PalDetailProps) 
       qc.invalidateQueries({ queryKey: ["pals"] })
       onDeleted()
     },
+  })
+
+  const duplicateMut = useMutation({
+    mutationFn: () => duplicatePal(pal.instance_id, playerUid),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pals"] })
+      toast.success("Pal duplicated")
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to duplicate pal"),
   })
 
   if (!detail) {
@@ -97,6 +107,9 @@ export default function PalDetail({ pal, disabled, onDeleted }: PalDetailProps) 
           detail={detail}
           patch={patch}
           onDelete={() => deleteMut.mutate()}
+          onDuplicate={() => duplicateMut.mutate()}
+          isBaseWorker={pal.player_uid === null}
+          duplicating={duplicateMut.isPending}
           disabled={disabled}
         />
       </CardContent>
