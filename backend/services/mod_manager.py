@@ -62,17 +62,19 @@ class ModManager:
         desired = {
             p.relative_to(self.mods_dir).as_posix(): p for p in self._iter_mod_files()
         }
+        previous = set(self._read_manifest())
         for rel, src in desired.items():
             dest = self.paks_dir / rel
             s = src.stat()
+            dest_stat = dest.stat() if dest.exists() else None
             if (
-                not dest.exists()
-                or dest.stat().st_size != s.st_size
-                or dest.stat().st_mtime != s.st_mtime
+                dest_stat is None
+                or dest_stat.st_size != s.st_size
+                or abs(dest_stat.st_mtime - s.st_mtime) > 2
             ):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dest)  # copy2 preserves mtime for change detection
-        for rel in set(self._read_manifest()) - set(desired):
+        for rel in previous - set(desired):
             dest = self.paks_dir / rel
             if dest.exists():
                 dest.unlink()

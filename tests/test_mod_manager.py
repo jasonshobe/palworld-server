@@ -100,3 +100,16 @@ def test_sync_returns_zero_when_no_mods_dir(tmp_path):
         manifest_path=str(tmp_path / "manifest.json"),
     )
     assert m.sync() == 0
+
+
+def test_sync_skips_unchanged_files_on_resync(mgr):
+    (mgr.mods_dir / "a.pak").write_bytes(b"data")
+    mgr.sync()
+    dest = mgr.paks_dir / "a.pak"
+    marker = dest.stat().st_mtime_ns
+    # Make source mtime differ by <2s; sync must NOT recopy (mtime stays the marker)
+    import os, time
+    src = mgr.mods_dir / "a.pak"
+    os.utime(src, (time.time(), dest.stat().st_mtime + 1))
+    mgr.sync()
+    assert dest.stat().st_mtime_ns == marker
