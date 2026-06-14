@@ -61,4 +61,24 @@ describe("Combobox", () => {
     expect(screen.getByPlaceholderText("Search species…")).toBeInTheDocument()
     expect(screen.getByText("Create")).toBeInTheDocument()
   })
+
+  it("keeps the highlight within the rendered options when the list exceeds 100", () => {
+    const many = Array.from({ length: 150 }, (_, i) => ({
+      value: `v${i}`,
+      label: `Item ${String(i).padStart(3, "0")}`,
+    }))
+    render(<Combobox options={many} onAdd={vi.fn()} />)
+    const input = screen.getByPlaceholderText("Search…")
+    fireEvent.focus(input)
+    // Only the first 100 options are rendered.
+    expect(screen.getAllByRole("option")).toHaveLength(100)
+    // Arrowing past the rendered window keeps the highlight on a rendered row.
+    for (let i = 0; i < 120; i++) {
+      fireEvent.keyDown(input, { key: "ArrowDown" })
+    }
+    const highlighted = screen
+      .getAllByRole("option")
+      .filter((el) => el.getAttribute("aria-selected") === "true")
+    expect(highlighted).toHaveLength(1)
+  })
 })

@@ -36,6 +36,8 @@ export default function Combobox({
     [options, query],
   )
 
+  const visible = filtered.slice(0, 100)
+
   const select = (option: ComboOption) => {
     setSelected(option.value)
     setQuery(option.label)
@@ -43,7 +45,7 @@ export default function Combobox({
   }
 
   const add = () => {
-    const value = selected || filtered[0]?.value
+    const value = selected || visible[0]?.value
     if (!value) return
     onAdd(value)
     setSelected("")
@@ -55,13 +57,13 @@ export default function Combobox({
     if (e.key === "ArrowDown") {
       e.preventDefault()
       setOpen(true)
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+      setHighlight((h) => Math.min(h + 1, visible.length - 1))
     } else if (e.key === "ArrowUp") {
       e.preventDefault()
       setHighlight((h) => Math.max(h - 1, 0))
     } else if (e.key === "Enter") {
       e.preventDefault()
-      const option = filtered[highlight]
+      const option = visible[highlight]
       if (option) select(option)
     } else if (e.key === "Escape") {
       setOpen(false)
@@ -87,7 +89,7 @@ export default function Combobox({
             className="h-7 text-sm flex-1"
             role="combobox"
             aria-expanded={open}
-            aria-activedescendant={open && filtered[highlight] ? `opt-${filtered[highlight].value}` : undefined}
+            aria-activedescendant={open && visible[highlight] ? `opt-${visible[highlight].value}` : undefined}
           />
         </Popover.Anchor>
         <Popover.Portal>
@@ -98,10 +100,10 @@ export default function Combobox({
             onOpenAutoFocus={(e) => e.preventDefault()}
             className="z-50 max-h-60 w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-sm shadow-md"
           >
-            {filtered.length === 0 ? (
+            {visible.length === 0 ? (
               <div className="px-2 py-1.5 text-muted-foreground">No matches</div>
             ) : (
-              filtered.slice(0, 100).map((o, i) => (
+              visible.map((o, i) => (
                 <div
                   key={o.value}
                   id={`opt-${o.value}`}
@@ -124,7 +126,7 @@ export default function Combobox({
       <button
         type="button"
         onClick={add}
-        disabled={disabled || filtered.length === 0}
+        disabled={disabled || visible.length === 0}
         className="h-7 px-3 text-sm rounded bg-slate-700 hover:bg-slate-600 disabled:opacity-40"
       >
         {addLabel}
