@@ -1,6 +1,6 @@
 import type { ActiveSkillOption } from "@/types"
 import Chip from "./Chip"
-import SkillCombobox from "./SkillCombobox"
+import Combobox from "@/components/ui/combobox"
 
 interface ActiveSkillsEditorProps {
   equipped: string[]
@@ -30,7 +30,7 @@ export default function ActiveSkillsEditor({ equipped, mastered, options, patch,
           {equipped.length === 0 && <span className="text-xs text-slate-500">None</span>}
         </div>
         {equipped.length < 3 && (
-          <SkillCombobox options={comboOptions(equipped)}
+          <Combobox options={comboOptions(equipped)}
             onAdd={(v) => patch("add_EquipWaza", v)} disabled={disabled}
             placeholder="Search active skills…" />
         )}
@@ -45,7 +45,7 @@ export default function ActiveSkillsEditor({ equipped, mastered, options, patch,
           ))}
           {mastered.length === 0 && <span className="text-xs text-slate-500">None</span>}
         </div>
-        <SkillCombobox options={comboOptions(mastered)}
+        <Combobox options={comboOptions(mastered)}
           onAdd={(v) => patch("add_MasteredWaza", v)} disabled={disabled}
           placeholder="Search active skills…" />
       </div>

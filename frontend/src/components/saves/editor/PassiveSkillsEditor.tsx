@@ -1,6 +1,6 @@
 import type { PassiveOption } from "@/types"
 import Chip from "./Chip"
-import SkillCombobox from "./SkillCombobox"
+import Combobox from "@/components/ui/combobox"
 
 interface PassiveSkillsEditorProps {
   current: string[]
@@ -29,7 +29,7 @@ export default function PassiveSkillsEditor({ current, options, patch, disabled 
         {current.length === 0 && <span className="text-xs text-slate-500">None</span>}
       </div>
       {current.length < 4 && (
-        <SkillCombobox
+        <Combobox
           options={available.map((o) => ({ value: o.internal_name, label: `${o.label} (${o.rating})` }))}
           onAdd={(value) => patch("add_PassiveSkillList", value)}
           disabled={disabled}
