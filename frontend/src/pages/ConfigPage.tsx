@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { getConfig, putConfig } from "@/api/config"
 import { useServerStatus } from "@/hooks/useServerStatus"
 import ConfigField, { type FieldMeta } from "@/components/config/ConfigField"
@@ -148,7 +149,14 @@ export default function ConfigPage() {
 
   const saveMut = useMutation({
     mutationFn: () => putConfig({ ...(config ?? {}), ...edits }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["config"] }); setEdits({}) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["config"] })
+      setEdits({})
+      toast.success("Configuration saved")
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Failed to save configuration")
+    },
   })
 
   const merged = { ...(config ?? {}), ...edits }
