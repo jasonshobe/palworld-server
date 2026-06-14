@@ -33,6 +33,16 @@ class PalDuplicate(BaseModel):
     player_uid: str
 
 
+class PalCreate(BaseModel):
+    player_uid: str
+    character_id: str
+
+
+class SpeciesOption(BaseModel):
+    internal_name: str
+    label: str
+
+
 class PassiveOption(BaseModel):
     internal_name: str
     label: str

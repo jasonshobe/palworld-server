@@ -216,3 +216,41 @@ def test_duplicate_pal_409_when_server_running(client):
     main_mod.server_manager = m
     resp = client.post("/api/saves/pals/pal-1/duplicate", json={"player_uid": "uid-1"})
     assert resp.status_code == 409
+
+
+def test_data_species_returns_list(client, monkeypatch):
+    from backend.services import pal_data
+    monkeypatch.setattr(
+        pal_data, "get_species",
+        lambda: [{"internal_name": "Foxparks", "label": "Foxparks"}],
+    )
+    resp = client.get("/api/saves/data/species")
+    assert resp.status_code == 200
+    assert resp.json() == [{"internal_name": "Foxparks", "label": "Foxparks"}]
+
+
+def test_create_pal_returns_new_summary(client, mock_save_manager):
+    mock_save_manager.create_pal.return_value = _make_new_pal()
+    resp = client.post("/api/saves/pals", json={"player_uid": "uid-1", "character_id": "Foxparks"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["instance_id"] == "pal-2"
+    assert data["player_uid"] == "uid-1"
+    mock_save_manager.create_pal.assert_called_once_with("uid-1", "Foxparks")
+
+
+def test_create_pal_full_palbox_returns_409(client, mock_save_manager):
+    from backend.services.save_manager import PalEditError
+    mock_save_manager.create_pal.side_effect = PalEditError("Pal box is full")
+    resp = client.post("/api/saves/pals", json={"player_uid": "uid-1", "character_id": "Foxparks"})
+    assert resp.status_code == 409
+    assert "full" in resp.json()["detail"].lower()
+
+
+def test_create_pal_409_when_server_running(client):
+    import backend.main as main_mod
+    m = MagicMock()
+    m.state = ServerState.RUNNING
+    main_mod.server_manager = m
+    resp = client.post("/api/saves/pals", json={"player_uid": "uid-1", "character_id": "Foxparks"})
+    assert resp.status_code == 409
