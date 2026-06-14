@@ -28,7 +28,7 @@ export default function UploadForm({ onUpload, disabled }: Props) {
         <input
           type="file"
           accept=".pak,.utoc,.ucas"
-          className="text-sm"
+          className="max-w-xs cursor-pointer text-sm text-slate-400 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-slate-700 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-100 hover:file:bg-slate-600"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
       </div>
