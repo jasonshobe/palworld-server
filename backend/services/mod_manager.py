@@ -83,3 +83,27 @@ class ModManager:
         if log:
             log(f"[controller] Synced {len(desired)} mod file(s).")
         return len(desired)
+
+    def _safe_relpath(self, *parts: str) -> Path:
+        rel = Path(*[p for p in parts if p])
+        if not rel.parts or rel.is_absolute() or ".." in rel.parts:
+            raise ValueError("Invalid path")
+        return rel
+
+    def save(self, filename: str, subfolder: str, fileobj) -> dict:
+        if Path(filename).suffix.lower() not in ACCEPTED_EXTS:
+            raise ValueError("Unsupported file type")
+        rel = self._safe_relpath(subfolder, filename)
+        dest = self.mods_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with dest.open("wb") as out:
+            shutil.copyfileobj(fileobj, out)
+        return {"path": rel.as_posix(), "size": dest.stat().st_size, "installed": False}
+
+    def delete(self, relpath: str) -> None:
+        rel = self._safe_relpath(relpath)
+        dest = self.mods_dir / rel
+        if not dest.is_file():
+            raise FileNotFoundError(relpath)
+        dest.unlink()
+        self._prune_empty_dirs(dest.parent, self.mods_dir)

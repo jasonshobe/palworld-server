@@ -1,3 +1,4 @@
+import io
 import json
 import pytest
 from backend.services.mod_manager import ModManager
@@ -113,3 +114,41 @@ def test_sync_skips_unchanged_files_on_resync(mgr):
     os.utime(src, (time.time(), dest.stat().st_mtime + 1))
     mgr.sync()
     assert dest.stat().st_mtime_ns == marker
+
+
+def test_save_writes_file_and_returns_info(mgr):
+    info = mgr.save("a.pak", "", io.BytesIO(b"data"))
+    assert info == {"path": "a.pak", "size": 4, "installed": False}
+    assert (mgr.mods_dir / "a.pak").read_bytes() == b"data"
+
+
+def test_save_into_subfolder(mgr):
+    info = mgr.save("b.pak", "LogicMods", io.BytesIO(b"bb"))
+    assert info["path"] == "LogicMods/b.pak"
+    assert (mgr.mods_dir / "LogicMods" / "b.pak").exists()
+
+
+def test_save_rejects_bad_extension(mgr):
+    with pytest.raises(ValueError):
+        mgr.save("evil.exe", "", io.BytesIO(b"x"))
+
+
+def test_save_rejects_traversal(mgr):
+    with pytest.raises(ValueError):
+        mgr.save("a.pak", "../escape", io.BytesIO(b"x"))
+
+
+def test_delete_removes_file_and_prunes(mgr):
+    mgr.save("b.pak", "LogicMods", io.BytesIO(b"bb"))
+    mgr.delete("LogicMods/b.pak")
+    assert not (mgr.mods_dir / "LogicMods").exists()
+
+
+def test_delete_missing_raises(mgr):
+    with pytest.raises(FileNotFoundError):
+        mgr.delete("nope.pak")
+
+
+def test_delete_rejects_traversal(mgr):
+    with pytest.raises(ValueError):
+        mgr.delete("../../etc/passwd")
