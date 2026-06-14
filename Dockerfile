@@ -30,8 +30,8 @@ COPY --from=frontend-builder /app/frontend/dist /app/backend/static
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Pre-create /palworld so Docker named-volume init preserves steam ownership
-RUN mkdir -p /palworld && chown -R steam:steam /app /palworld
+# Pre-create /palworld and /mods so Docker named-volume init preserves steam ownership
+RUN mkdir -p /palworld /mods && chown -R steam:steam /app /palworld /mods
 USER steam
 
 EXPOSE 8080
