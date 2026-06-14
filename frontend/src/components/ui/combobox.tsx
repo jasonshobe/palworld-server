@@ -80,17 +80,19 @@ export default function Combobox({
               setHighlight(0)
               setOpen(true)
             }}
-            onFocus={() => setOpen(true)}
+            onFocus={() => { setOpen(true); setHighlight(0) }}
             onKeyDown={onInputKeyDown}
             disabled={disabled}
             placeholder={placeholder ?? "Search…"}
             className="h-7 text-sm flex-1"
             role="combobox"
             aria-expanded={open}
+            aria-activedescendant={open && filtered[highlight] ? `opt-${filtered[highlight].value}` : undefined}
           />
         </Popover.Anchor>
         <Popover.Portal>
           <Popover.Content
+            role="listbox"
             align="start"
             sideOffset={4}
             onOpenAutoFocus={(e) => e.preventDefault()}
@@ -102,6 +104,7 @@ export default function Combobox({
               filtered.slice(0, 100).map((o, i) => (
                 <div
                   key={o.value}
+                  id={`opt-${o.value}`}
                   role="option"
                   aria-selected={i === highlight}
                   onClick={() => select(o)}
