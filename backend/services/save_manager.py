@@ -56,6 +56,22 @@ class SaveManager:
     def delete_pal(self, guid: str) -> bool:
         return self._manager.delete_pal(guid)
 
+    def duplicate_pal(self, player_uid: str, instance_id: str) -> Any:
+        if player_uid == "PAL_BASE_WORKER_BTN":
+            raise PalEditError("Base Worker pals cannot be duplicated")
+        player = self._manager.get_player(player_uid)
+        if player is None:
+            raise ValueError(f"Player {player_uid} not found")
+        source = player.get_pal(instance_id)
+        if source is None:
+            raise ValueError(f"Pal {instance_id} not found")
+        new_pal = self._manager.add_pal(player_uid, source._pal_obj)
+        if new_pal is None:
+            raise PalEditError("Pal box is full")
+        base = source.NickName or source.DisplayName
+        new_pal.NickName = f"{base} (copy)"
+        return new_pal
+
     def set_pal_attr(self, player_uid: str, instance_id: str, key: str, value: Any) -> None:
         if player_uid == "PAL_BASE_WORKER_BTN":
             pal = self._manager.get_working_pal(instance_id)
