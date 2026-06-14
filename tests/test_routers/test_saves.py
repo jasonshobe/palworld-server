@@ -92,7 +92,9 @@ def _make_pal():
     return pal
 
 
-def test_get_pal_returns_extended_fields(client, mock_save_manager):
+def test_get_pal_returns_extended_fields(client, mock_save_manager, monkeypatch):
+    from backend.services import pal_data
+    monkeypatch.setattr(pal_data, "get_pal_food_max", lambda key: 300)
     pal = _make_pal()
     player = mock_save_manager.get_player.return_value
     player.get_pal.return_value = pal
@@ -102,6 +104,7 @@ def test_get_pal_returns_extended_fields(client, mock_save_manager):
     assert data["friendship_level"] == 2
     assert data["sanity"] == 100.0
     assert data["full_stomach"] == 150.0
+    assert data["max_full_stomach"] == 300
     assert data["is_favorite"] is True
     assert data["suitabilities"] == {"Watering": 2}
 

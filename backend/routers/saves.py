@@ -130,6 +130,7 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
         "friendship_level": pal.FriendshipLevel or 0,
         "sanity": pal.SanityValue,
         "full_stomach": pal.FullStomach,
+        "max_full_stomach": pal_data.get_pal_food_max(pal.DataAccessKey),
         "is_rare": pal.IsRarePal or False,
         "is_boss": pal.IsBOSS or False,
         "is_tower": pal.IsTower or False,

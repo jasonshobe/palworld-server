@@ -49,3 +49,11 @@ def get_active_skills() -> list[dict]:
 
 def get_suitabilities() -> list[str]:
     return list(SUITABILITIES)
+
+
+# Per-species max Full Stomach (the pal's FOOD stat). Falls back to 150 — the
+# same default the library uses when a species has no FOOD stat.
+def get_pal_food_max(data_access_key: str | None) -> int:
+    if not data_access_key:
+        return 150
+    return _provider().get_pal_stats(data_access_key, "FOOD") or 150

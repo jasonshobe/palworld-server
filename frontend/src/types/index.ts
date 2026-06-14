@@ -58,6 +58,7 @@ export interface PalDetailData {
   friendship_level: number
   sanity: number | null
   full_stomach: number | null
+  max_full_stomach: number
   is_rare: boolean
   is_boss: boolean
   is_tower: boolean
