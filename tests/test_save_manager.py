@@ -134,3 +134,23 @@ def test_set_pal_attr_unknown_player_raises_value_error():
     sm._manager = manager
     with pytest.raises(ValueError, match="Player"):
         sm.set_pal_attr("uid-x", "pal-1", "Level", 1)
+
+
+def test_commit_raises_when_library_save_fails():
+    # The library's save() returns False (without raising) on several abort
+    # conditions; commit() must surface that as an error, not silently succeed.
+    sm = SaveManager.__new__(SaveManager)
+    sm._manager = MagicMock()
+    sm._manager.save.return_value = False
+    sm._save_path = Path("/tmp/does-not-matter")
+    with pytest.raises(RuntimeError, match="save"):
+        sm.commit()
+
+
+def test_commit_succeeds_when_library_save_returns_true():
+    sm = SaveManager.__new__(SaveManager)
+    sm._manager = MagicMock()
+    sm._manager.save.return_value = True
+    sm._save_path = Path("/tmp/does-not-matter")
+    sm.commit()
+    sm._manager.save.assert_called_once_with("/tmp/does-not-matter")

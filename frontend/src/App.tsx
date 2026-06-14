@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Toaster } from "sonner"
 import { AuthProvider } from "@/context/AuthContext"
 import { useAuth } from "@/hooks/useAuth"
 import Layout from "@/components/Layout"
@@ -34,6 +35,7 @@ export default function App() {
             </Routes>
           </AuthGate>
         </BrowserRouter>
+        <Toaster position="bottom-right" richColors closeButton theme="dark" />
       </AuthProvider>
     </QueryClientProvider>
   )

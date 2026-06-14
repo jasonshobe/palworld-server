@@ -56,6 +56,13 @@ def test_commit_saves_file(client, mock_save_manager):
     mock_save_manager.commit.assert_called_once()
 
 
+def test_commit_returns_500_when_save_fails(client, mock_save_manager):
+    mock_save_manager.commit.side_effect = RuntimeError("Failed to write save to disk")
+    resp = client.post("/api/saves/commit")
+    assert resp.status_code == 500
+    assert "disk" in resp.json()["detail"].lower()
+
+
 def _make_pal():
     pal = MagicMock()
     pal.InstanceId = "pal-1"

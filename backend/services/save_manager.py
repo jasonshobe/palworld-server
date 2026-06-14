@@ -100,4 +100,8 @@ class SaveManager:
                 setattr(pal, key, value)
 
     def commit(self) -> None:
-        self._manager.save(str(self._save_path))
+        # The library's save() returns False (without raising) when it aborts —
+        # e.g. no gvas loaded, missing compression metadata, or a failed backup.
+        # Surface that as an error so callers don't report a phantom success.
+        if not self._manager.save(str(self._save_path)):
+            raise RuntimeError("Failed to write save to disk")

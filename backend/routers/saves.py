@@ -166,5 +166,8 @@ def delete_pal(instance_id: str):
 def commit_save():
     _assert_stopped()
     sm = _get_save_manager()
-    sm.commit()
+    try:
+        sm.commit()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return {"ok": True}
