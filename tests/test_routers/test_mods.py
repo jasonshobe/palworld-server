@@ -61,3 +61,11 @@ def test_delete_removes_file(client, mods_dir):
 def test_delete_missing_returns_404(client):
     resp = client.delete("/api/mods/nope.pak")
     assert resp.status_code == 404
+
+
+def test_upload_rejects_empty_filename(client):
+    resp = client.post(
+        "/api/mods/upload",
+        files={"file": ("", io.BytesIO(b"x"), "application/octet-stream")},
+    )
+    assert resp.status_code == 422

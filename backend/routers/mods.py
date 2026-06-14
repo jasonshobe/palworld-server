@@ -16,6 +16,8 @@ def list_mods():
 
 @router.post("/upload", response_model=ModInfo)
 def upload_mod(file: UploadFile = File(...), subfolder: str = Form("")):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
     try:
         return _manager().save(file.filename, subfolder, file.file)
     except ValueError as e:
