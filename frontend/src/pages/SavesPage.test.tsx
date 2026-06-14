@@ -74,8 +74,9 @@ describe("SavesPage create pal", () => {
     })
     renderPage()
 
-    // Wait until the species option has loaded so the control is enabled.
+    // Type to open the combobox, then wait for the species option to load.
     await screen.findByRole("button", { name: "Player1" })
+    await userEvent.type(screen.getByPlaceholderText("Search species…"), "Fox")
     await screen.findByRole("option", { name: "Foxparks" })
     await userEvent.click(screen.getByText("Add"))
 
