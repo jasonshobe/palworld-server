@@ -1,5 +1,5 @@
 import { apiFetch } from "./client"
-import type { PlayersResponse, PalSummary, PalDetailData, PassiveOption, ActiveSkillOption } from "@/types"
+import type { PlayersResponse, PalSummary, PalDetailData, PassiveOption, ActiveSkillOption, SpeciesOption } from "@/types"
 
 export const getPlayers = () => apiFetch<PlayersResponse>("/saves/players")
 export const getPals = (playerUid: string) =>
@@ -18,8 +18,14 @@ export const duplicatePal = (instanceId: string, playerUid: string) =>
     method: "POST",
     body: JSON.stringify({ player_uid: playerUid }),
   })
+export const createPal = (playerUid: string, characterId: string) =>
+  apiFetch<PalSummary>(`/saves/pals`, {
+    method: "POST",
+    body: JSON.stringify({ player_uid: playerUid, character_id: characterId }),
+  })
 export const commitSave = () => apiFetch<{ ok: boolean }>("/saves/commit", { method: "POST" })
 
 export const getPassives = () => apiFetch<PassiveOption[]>("/saves/data/passives")
 export const getActiveSkills = () => apiFetch<ActiveSkillOption[]>("/saves/data/active-skills")
 export const getSuitabilities = () => apiFetch<string[]>("/saves/data/suitabilities")
+export const getSpecies = () => apiFetch<SpeciesOption[]>("/saves/data/species")

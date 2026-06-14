@@ -6,8 +6,10 @@ from backend.models.saves import (
     PalSummary,
     PalPatch,
     PalDuplicate,
+    PalCreate,
     PassiveOption,
     ActiveSkillOption,
+    SpeciesOption,
 )
 from backend.services import pal_data
 
@@ -77,6 +79,29 @@ def get_pals(player_uid: str = Query(...)):
     ]
 
 
+@router.post("/pals", response_model=PalSummary)
+def create_pal(body: PalCreate):
+    _assert_stopped()
+    sm = _get_save_manager()
+    from backend.services.save_manager import PalEditError
+    try:
+        pal = sm.create_pal(body.player_uid, body.character_id)
+    except PalEditError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return PalSummary(
+        instance_id=str(pal.InstanceId),
+        player_uid=body.player_uid,
+        display_name=pal.DisplayName,
+        nickname=pal.NickName or "",
+        level=pal.Level or 1,
+        gender=pal.Gender.value if pal.Gender else None,
+        is_unref=pal.is_unreferenced_pal,
+        in_owner_palbox=pal.in_owner_palbox,
+    )
+
+
 @router.get("/data/passives", response_model=list[PassiveOption])
 def data_passives():
     return pal_data.get_passives()
@@ -85,6 +110,11 @@ def data_passives():
 @router.get("/data/active-skills", response_model=list[ActiveSkillOption])
 def data_active_skills():
     return pal_data.get_active_skills()
+
+
+@router.get("/data/species", response_model=list[SpeciesOption])
+def data_species():
+    return pal_data.get_species()
 
 
 @router.get("/data/suitabilities", response_model=list[str])

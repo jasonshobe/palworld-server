@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 
 # Fixed set of Palworld work suitabilities (PalSuitability enum names upstream).
@@ -45,6 +46,39 @@ def get_active_skills() -> list[dict]:
             "is_unique": dp.is_unique_attacks(name),
             "invalid": a.get("Invalid", False),
         })
+    return out
+
+
+def _format_sorting_key(sorting_key: str | None) -> str:
+    """Mirror palworld-pal-editor's formatString: zero-pad the numeric part of a
+    paldeck SortingKey to at least 3 digits, preserving any alphabetic suffix
+    (e.g. "9" -> "009", "24B" -> "024B"). Non-conforming keys are returned
+    unchanged; a missing key yields an empty string."""
+    if not sorting_key:
+        return ""
+    match = re.match(r"^(\d+)([A-Za-z]*)$", sorting_key)
+    if not match:
+        return sorting_key
+    numbers, suffix = match.groups()
+    return numbers.zfill(3) + suffix
+
+
+@lru_cache(maxsize=1)
+def get_species() -> list[dict]:
+    dp = _provider()
+    out = []
+    for item in dp.get_sorted_pals():
+        name = item["InternalName"]
+        # Match palworld-pal-editor's picker: collapse boss/alpha variants that
+        # have a base form (e.g. drop "Boss_Anubis" when "Anubis" exists), and
+        # (its default view) hide humans and invalid entries.
+        if ("BOSS_" in name or "Boss_" in name) and dp.boss_has_base_variant(name):
+            continue
+        if dp.is_pal_human(name) or dp.is_pal_invalid(name):
+            continue
+        i18n = dp.get_pal_i18n(name) or name
+        prefix = _format_sorting_key(dp.get_pal_sorting_key(name))
+        out.append({"internal_name": name, "label": f"{prefix} {i18n}" if prefix else i18n})
     return out
 
 

@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { getPlayers, getPals, commitSave } from "@/api/saves"
+import { getPlayers, getPals, getSpecies, createPal, commitSave } from "@/api/saves"
 import { useServerStatus } from "@/hooks/useServerStatus"
 import PalList from "@/components/saves/PalList"
 import PalDetail from "@/components/saves/PalDetail"
+import SpeciesCombobox from "@/components/saves/SpeciesCombobox"
 import type { PalSummary } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,20 @@ export default function SavesPage() {
     queryKey: ["pals", effectivePlayer],
     queryFn: () => getPals(effectivePlayer!),
     enabled: effectivePlayer !== null,
+  })
+
+  const { data: species = [] } = useQuery({ queryKey: ["species"], queryFn: getSpecies })
+
+  const createMut = useMutation({
+    mutationFn: (characterId: string) => createPal(effectivePlayer!, characterId),
+    onSuccess: (newPal) => {
+      qc.invalidateQueries({ queryKey: ["pals"] })
+      setSelectedPal(newPal)
+      toast.success("Pal created")
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Failed to create pal")
+    },
   })
 
   const commitMut = useMutation({
@@ -69,7 +84,19 @@ export default function SavesPage() {
 
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-1">
-          <CardHeader><CardTitle className="text-sm">Pals ({pals.length})</CardTitle></CardHeader>
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-sm">Pals ({pals.length})</CardTitle>
+            <SpeciesCombobox
+              options={species}
+              onCreate={(id) => createMut.mutate(id)}
+              disabled={
+                disabled ||
+                !effectivePlayer ||
+                effectivePlayer === "PAL_BASE_WORKER_BTN" ||
+                createMut.isPending
+              }
+            />
+          </CardHeader>
           <CardContent>
             <PalList
               pals={pals}
