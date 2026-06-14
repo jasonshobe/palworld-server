@@ -111,11 +111,13 @@ def test_set_pal_attr_pop_equip_waza_calls_method():
     pal.pop_EquipWaza.assert_called_once_with(item="EPalWazaID::Fire_FlareArrow")
 
 
-def test_set_pal_attr_set_suitability_calls_method():
+def test_set_pal_attr_set_suitability_uses_prefixed_enum_value():
+    # The library's set_WorkSuitability resolves the suitability via the full
+    # EPalWorkSuitability:: enum value; the bare name silently no-ops.
     pal = MagicMock()
     sm = _sm_with_pal(pal)
     sm.set_pal_attr("uid-1", "pal-1", "set_Suitability", {"name": "Watering", "level": 3})
-    pal.set_WorkSuitability.assert_called_once_with("Watering", 3)
+    pal.set_WorkSuitability.assert_called_once_with("EPalWorkSuitability::Watering", 3)
 
 
 def test_set_pal_attr_heal_calls_heal_pal():

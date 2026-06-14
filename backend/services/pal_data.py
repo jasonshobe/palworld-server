@@ -52,6 +52,24 @@ def get_suitabilities() -> list[str]:
     return list(SUITABILITIES)
 
 
+# The library keys WorkSuitabilities by the full enum value
+# (e.g. "EPalWorkSuitability::EmitFlame") and resolves writes via the same
+# value; the rest of this app uses the bare name ("EmitFlame").
+SUITABILITY_PREFIX = "EPalWorkSuitability::"
+
+
+def suitabilities_to_names(raw: dict[str, int] | None) -> dict[str, int]:
+    """Strip the EPalWorkSuitability:: prefix from library suitability keys."""
+    return {k.removeprefix(SUITABILITY_PREFIX): v for k, v in (raw or {}).items()}
+
+
+def suitability_to_internal(name: str) -> str:
+    """Add the enum prefix the library requires when setting a suitability."""
+    if name.startswith(SUITABILITY_PREFIX):
+        return name
+    return SUITABILITY_PREFIX + name
+
+
 # Per-species max Full Stomach (the pal's FOOD stat). Falls back to 150 — the
 # same default the library uses when a species has no FOOD stat.
 def get_pal_food_max(data_access_key: str | None) -> int:
