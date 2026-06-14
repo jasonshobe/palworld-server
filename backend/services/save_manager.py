@@ -72,6 +72,25 @@ class SaveManager:
         new_pal.NickName = f"{base} (copy)"
         return new_pal
 
+    def create_pal(self, player_uid: str, character_id: str) -> Any:
+        if player_uid == "PAL_BASE_WORKER_BTN":
+            raise PalEditError("Base Worker pals cannot be created")
+        player = self._manager.get_player(player_uid)
+        if player is None:
+            raise ValueError(f"Player {player_uid} not found")
+        # add_pal with no template yields a blank Lamball (SheepBall) with the
+        # Lamball roll equipped. Retarget the species via the CharacterID setter,
+        # which auto-learns the new species' level-1 mastered skill and strips
+        # the previous species' unique mastered skills. equip_all_pal_attacks
+        # then replaces the leftover equipped Lamball roll with the level-1 skill.
+        new_pal = self._manager.add_pal(player_uid)
+        if new_pal is None:
+            raise PalEditError("Pal box is full")
+        new_pal.CharacterID = character_id
+        new_pal.equip_all_pal_attacks()
+        new_pal.NickName = None
+        return new_pal
+
     def set_pal_attr(self, player_uid: str, instance_id: str, key: str, value: Any) -> None:
         if player_uid == "PAL_BASE_WORKER_BTN":
             pal = self._manager.get_working_pal(instance_id)

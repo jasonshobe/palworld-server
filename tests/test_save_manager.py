@@ -227,3 +227,46 @@ def test_duplicate_pal_unknown_pal_raises_value_error():
     sm._manager = manager
     with pytest.raises(ValueError, match="Pal"):
         sm.duplicate_pal("uid-1", "pal-x")
+
+
+def _sm_for_create(add_pal_result):
+    """SaveManager bypassing __init__, wired to a mock library manager."""
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    manager.get_player.return_value = MagicMock()
+    manager.add_pal.return_value = add_pal_result
+    sm._manager = manager
+    return sm, manager
+
+
+def test_create_pal_sets_species_equips_skill_and_clears_name():
+    new_pal = MagicMock()
+    sm, manager = _sm_for_create(new_pal)
+    result = sm.create_pal("uid-1", "Foxparks")
+    manager.add_pal.assert_called_once_with("uid-1")
+    assert new_pal.CharacterID == "Foxparks"
+    new_pal.equip_all_pal_attacks.assert_called_once()
+    assert new_pal.NickName is None
+    assert result is new_pal
+
+
+def test_create_pal_full_palbox_raises_pal_edit_error():
+    sm, _ = _sm_for_create(None)
+    with pytest.raises(PalEditError, match="full"):
+        sm.create_pal("uid-1", "Foxparks")
+
+
+def test_create_pal_base_worker_raises_pal_edit_error():
+    sm = SaveManager.__new__(SaveManager)
+    sm._manager = MagicMock()
+    with pytest.raises(PalEditError):
+        sm.create_pal("PAL_BASE_WORKER_BTN", "Foxparks")
+
+
+def test_create_pal_unknown_player_raises_value_error():
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    manager.get_player.return_value = None
+    sm._manager = manager
+    with pytest.raises(ValueError, match="Player"):
+        sm.create_pal("uid-x", "Foxparks")
