@@ -8,10 +8,15 @@ export function useDebouncedCallback<A extends unknown[]>(
 ) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fnRef = useRef(fn)
-  fnRef.current = fn
+  useEffect(() => {
+    fnRef.current = fn
+  }, [fn])
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current)
+  useEffect(() => {
+    const t = timer
+    return () => {
+      if (t.current) clearTimeout(t.current)
+    }
   }, [])
 
   return useCallback(
