@@ -48,6 +48,26 @@ def get_active_skills() -> list[dict]:
     return out
 
 
+@lru_cache(maxsize=1)
+def get_species() -> list[dict]:
+    dp = _provider()
+    entries = []
+    for item in dp.get_sorted_pals():
+        name = item["InternalName"]
+        if dp.is_pal_human(name) or dp.is_pal_invalid(name):
+            continue
+        entries.append({"internal_name": name, "label": dp.get_pal_i18n(name) or name})
+    # Disambiguate species that share a display name (e.g. a pal and its boss
+    # variant) by appending the internal name, so the picker has unique labels.
+    counts: dict[str, int] = {}
+    for e in entries:
+        counts[e["label"]] = counts.get(e["label"], 0) + 1
+    for e in entries:
+        if counts[e["label"]] > 1:
+            e["label"] = f"{e['label']} ({e['internal_name']})"
+    return entries
+
+
 def get_suitabilities() -> list[str]:
     return list(SUITABILITIES)
 

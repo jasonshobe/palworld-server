@@ -270,3 +270,32 @@ def test_create_pal_unknown_player_raises_value_error():
     sm._manager = manager
     with pytest.raises(ValueError, match="Player"):
         sm.create_pal("uid-x", "Foxparks")
+
+
+def test_get_species_excludes_humans_and_invalid_and_disambiguates():
+    from backend.services import pal_data
+    fake = MagicMock()
+    fake.get_sorted_pals.return_value = [
+        {"InternalName": "Foxparks"},
+        {"InternalName": "NPC_Vixen"},
+        {"InternalName": "Hexolite"},
+        {"InternalName": "Anubis"},
+        {"InternalName": "Boss_Anubis"},
+    ]
+    fake.is_pal_human.side_effect = lambda n: n == "NPC_Vixen"
+    fake.is_pal_invalid.side_effect = lambda n: n == "Hexolite"
+    i18n = {"Foxparks": "Foxparks", "Anubis": "Anubis", "Boss_Anubis": "Anubis"}
+    fake.get_pal_i18n.side_effect = lambda n: i18n.get(n)
+
+    pal_data.get_species.cache_clear()
+    with patch.object(pal_data, "_provider", lambda: fake):
+        result = pal_data.get_species()
+    pal_data.get_species.cache_clear()
+
+    names = [r["internal_name"] for r in result]
+    assert names == ["Foxparks", "Anubis", "Boss_Anubis"]
+    labels = {r["internal_name"]: r["label"] for r in result}
+    # Unique display names are kept as-is; colliding ones get the internal name.
+    assert labels["Foxparks"] == "Foxparks"
+    assert labels["Anubis"] == "Anubis (Anubis)"
+    assert labels["Boss_Anubis"] == "Anubis (Boss_Anubis)"
