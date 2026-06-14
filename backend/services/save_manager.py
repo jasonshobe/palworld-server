@@ -8,8 +8,11 @@ except ImportError:
     PPESaveManager = None
 
 SAVE_BASE = Path("/palworld/Pal/Saved/SaveGames/0")
+# Palworld dedicated servers name save dirs as 32 hex chars with no dashes
+# (e.g. 01FA6B67A43540259077D0C69D58B4D1); other tools may use the dashed
+# UUID form. Accept either by making the dashes optional.
 UUID_PATTERN = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    r"^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$",
     re.IGNORECASE,
 )
 

@@ -34,6 +34,18 @@ def test_find_save_path_skips_non_uuid_dirs(tmp_path):
     assert find_save_path(base) is None
 
 
+def test_find_save_path_returns_dashless_hex_dir(tmp_path):
+    # Palworld dedicated servers name save dirs as 32 hex chars without dashes
+    base = tmp_path / "SaveGames" / "0"
+    server_id = "01FA6B67A43540259077D0C69D58B4D1"
+    save_path = base / server_id
+    save_path.mkdir(parents=True)
+    (save_path / "Level.sav").touch()
+    found = find_save_path(base)
+    assert found is not None
+    assert found.name == server_id
+
+
 def test_save_manager_init_raises_when_no_save(tmp_path):
     base = tmp_path / "SaveGames" / "0"
     base.mkdir(parents=True)
