@@ -272,6 +272,16 @@ def test_create_pal_unknown_player_raises_value_error():
         sm.create_pal("uid-x", "Foxparks")
 
 
+def test_create_pal_rolls_back_when_mutation_fails():
+    new_pal = MagicMock()
+    new_pal.InstanceId = "pal-new"
+    new_pal.equip_all_pal_attacks.side_effect = RuntimeError("boom")
+    sm, manager = _sm_for_create(new_pal)
+    with pytest.raises(RuntimeError, match="boom"):
+        sm.create_pal("uid-1", "Foxparks")
+    manager.delete_pal.assert_called_once_with("pal-new")
+
+
 def test_get_species_excludes_humans_and_invalid_and_disambiguates():
     from backend.services import pal_data
     fake = MagicMock()

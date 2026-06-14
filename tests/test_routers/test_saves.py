@@ -230,12 +230,15 @@ def test_data_species_returns_list(client, monkeypatch):
 
 
 def test_create_pal_returns_new_summary(client, mock_save_manager):
-    mock_save_manager.create_pal.return_value = _make_new_pal()
+    created = _make_new_pal()
+    created.NickName = None
+    mock_save_manager.create_pal.return_value = created
     resp = client.post("/api/saves/pals", json={"player_uid": "uid-1", "character_id": "Foxparks"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["instance_id"] == "pal-2"
     assert data["player_uid"] == "uid-1"
+    assert data["nickname"] == ""
     mock_save_manager.create_pal.assert_called_once_with("uid-1", "Foxparks")
 
 
@@ -245,6 +248,12 @@ def test_create_pal_full_palbox_returns_409(client, mock_save_manager):
     resp = client.post("/api/saves/pals", json={"player_uid": "uid-1", "character_id": "Foxparks"})
     assert resp.status_code == 409
     assert "full" in resp.json()["detail"].lower()
+
+
+def test_create_pal_unknown_returns_404(client, mock_save_manager):
+    mock_save_manager.create_pal.side_effect = ValueError("Player not found")
+    resp = client.post("/api/saves/pals", json={"player_uid": "uid-x", "character_id": "Foxparks"})
+    assert resp.status_code == 404
 
 
 def test_create_pal_409_when_server_running(client):

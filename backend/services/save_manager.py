@@ -86,9 +86,16 @@ class SaveManager:
         new_pal = self._manager.add_pal(player_uid)
         if new_pal is None:
             raise PalEditError("Pal box is full")
-        new_pal.CharacterID = character_id
-        new_pal.equip_all_pal_attacks()
-        new_pal.NickName = None
+        # add_pal registers the pal before its species is set; if any of the
+        # species setup fails, remove the half-built pal so it is not written
+        # to disk on the next commit.
+        try:
+            new_pal.CharacterID = character_id
+            new_pal.equip_all_pal_attacks()
+            new_pal.NickName = None
+        except Exception:
+            self._manager.delete_pal(str(new_pal.InstanceId))
+            raise
         return new_pal
 
     def set_pal_attr(self, player_uid: str, instance_id: str, key: str, value: Any) -> None:
