@@ -56,7 +56,7 @@ function NumberRow({ field, patch, disabled }: { field: NumField; patch: (k: str
 
 export default function StatsEditor({ detail, patch, disabled }: StatsEditorProps) {
   const core: NumField[] = [
-    { key: "Level", label: "Level", value: detail.level, min: 1, max: 60 },
+    { key: "Level", label: "Level", value: detail.level, min: 1, max: 65 },
     { key: "Rank", label: "Stars (Rank)", value: detail.rank, min: 1, max: 5 },
   ]
   const souls: NumField[] = [
