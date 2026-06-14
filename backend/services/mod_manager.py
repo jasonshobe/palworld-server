@@ -42,3 +42,42 @@ class ModManager:
             rel = p.relative_to(self.mods_dir).as_posix()
             out.append({"path": rel, "size": p.stat().st_size, "installed": rel in installed})
         return out
+
+    def _prune_empty_dirs(self, directory: Path, root: Path) -> None:
+        try:
+            directory = directory.resolve()
+            root = root.resolve()
+        except OSError:
+            return
+        while directory != root and root in directory.parents:
+            try:
+                directory.rmdir()  # only removes empty dirs
+            except OSError:
+                break
+            directory = directory.parent
+
+    def sync(self, log: Callable[[str], None] | None = None) -> int:
+        if not self.mods_dir.exists():
+            return 0
+        desired = {
+            p.relative_to(self.mods_dir).as_posix(): p for p in self._iter_mod_files()
+        }
+        for rel, src in desired.items():
+            dest = self.paks_dir / rel
+            s = src.stat()
+            if (
+                not dest.exists()
+                or dest.stat().st_size != s.st_size
+                or dest.stat().st_mtime != s.st_mtime
+            ):
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dest)  # copy2 preserves mtime for change detection
+        for rel in set(self._read_manifest()) - set(desired):
+            dest = self.paks_dir / rel
+            if dest.exists():
+                dest.unlink()
+            self._prune_empty_dirs(dest.parent, self.paks_dir)
+        self._write_manifest(list(desired))
+        if log:
+            log(f"[controller] Synced {len(desired)} mod file(s).")
+        return len(desired)
