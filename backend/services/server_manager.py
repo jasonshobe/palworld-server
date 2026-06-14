@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import shlex
 from collections import deque
 from pathlib import Path
@@ -10,6 +11,17 @@ STEAMCMD_PATH = "/home/steam/steamcmd/steamcmd.sh"
 PALWORLD_DIR = "/palworld"
 PALWORLD_BINARY = "/palworld/PalServer.sh"
 STEAMAPP_ID = "2394010"
+# On a fresh install SteamCMD updates itself and restarts mid-session; the
+# first app_update after that restart fails with "Missing configuration".
+# Re-running succeeds, so retry the whole invocation a few times.
+STEAMCMD_MAX_ATTEMPTS = 3
+
+# SteamCMD emits ANSI color escape sequences; strip them from log output.
+_ANSI_RE = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
 
 
 class ServerManager:
@@ -24,38 +36,52 @@ class ServerManager:
         return list(self._logs)[-100:]
 
     def _push_log(self, line: str) -> None:
-        self._logs.append(line)
+        self._logs.append(_strip_ansi(line).rstrip())
 
     async def _tail_output(self, process: asyncio.subprocess.Process) -> None:
         async for line in process.stdout:
-            self._push_log(line.decode().rstrip())
+            self._push_log(line.decode())
         await process.wait()
         if self.state == ServerState.RUNNING:
             self._push_log(f"[controller] Server exited (code {process.returncode})")
             self.state = ServerState.STOPPED
         self._process = None
 
+    async def _run_steamcmd(self) -> int:
+        proc = await asyncio.create_subprocess_exec(
+            STEAMCMD_PATH,
+            "+force_install_dir", PALWORLD_DIR,
+            "+login", "anonymous",
+            "+app_update", STEAMAPP_ID, "validate",
+            "+quit",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        async for line in proc.stdout:
+            self._push_log(line.decode())
+        await proc.wait()
+        return proc.returncode
+
     async def update(self) -> None:
         if self.state != ServerState.STOPPED:
             raise RuntimeError("Server must be stopped before updating")
         self.state = ServerState.UPDATING
         try:
-            self._push_log("[controller] Starting SteamCMD update...")
-            proc = await asyncio.create_subprocess_exec(
-                STEAMCMD_PATH,
-                "+force_install_dir", PALWORLD_DIR,
-                "+login", "anonymous",
-                "+app_update", STEAMAPP_ID, "validate",
-                "+quit",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
+            for attempt in range(1, STEAMCMD_MAX_ATTEMPTS + 1):
+                self._push_log(
+                    f"[controller] Starting SteamCMD update "
+                    f"(attempt {attempt}/{STEAMCMD_MAX_ATTEMPTS})..."
+                )
+                returncode = await self._run_steamcmd()
+                if returncode == 0:
+                    self._push_log("[controller] Update complete.")
+                    return
+                self._push_log(
+                    f"[controller] SteamCMD exited with code {returncode}."
+                )
+            raise RuntimeError(
+                f"SteamCMD failed after {STEAMCMD_MAX_ATTEMPTS} attempts"
             )
-            async for line in proc.stdout:
-                self._push_log(line.decode().rstrip())
-            await proc.wait()
-            if proc.returncode != 0:
-                raise RuntimeError(f"SteamCMD failed (code {proc.returncode})")
-            self._push_log("[controller] Update complete.")
         finally:
             self.state = ServerState.STOPPED
 
