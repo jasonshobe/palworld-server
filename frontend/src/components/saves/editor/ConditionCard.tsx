@@ -7,10 +7,15 @@ interface ConditionCardProps {
   detail: PalDetailData
   patch: (key: string, value: unknown) => void
   onDelete: () => void
+  onDuplicate: () => void
+  isBaseWorker: boolean
   disabled?: boolean
+  duplicating?: boolean
 }
 
-export default function ConditionCard({ detail, patch, onDelete, disabled }: ConditionCardProps) {
+export default function ConditionCard({
+  detail, patch, onDelete, onDuplicate, isBaseWorker, disabled, duplicating,
+}: ConditionCardProps) {
   const needsHeal = detail.has_worker_sick || detail.is_fainted
 
   return (
@@ -32,6 +37,12 @@ export default function ConditionCard({ detail, patch, onDelete, disabled }: Con
           <Button variant="outline" size="sm" disabled={disabled}
             onClick={() => patch("heal_pal", true)}>Heal</Button>
         )}
+        <Button variant="outline" size="sm"
+          disabled={disabled || isBaseWorker || duplicating}
+          title={isBaseWorker ? "Base Worker pals can't be duplicated" : undefined}
+          onClick={onDuplicate}>
+          Duplicate
+        </Button>
         <Button variant="destructive" size="sm" disabled={disabled}
           onClick={() => { if (confirm(`Delete ${detail.display_name ?? "this pal"}?`)) onDelete() }}>
           Delete Pal

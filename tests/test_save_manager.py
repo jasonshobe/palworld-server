@@ -154,3 +154,76 @@ def test_commit_succeeds_when_library_save_returns_true():
     sm._save_path = Path("/tmp/does-not-matter")
     sm.commit()
     sm._manager.save.assert_called_once_with("/tmp/does-not-matter")
+
+
+def _sm_for_duplicate(source_pal, add_pal_result):
+    """SaveManager bypassing __init__, wired to a mock library manager."""
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    player = MagicMock()
+    player.get_pal.return_value = source_pal
+    manager.get_player.return_value = player
+    manager.add_pal.return_value = add_pal_result
+    sm._manager = manager
+    return sm, manager
+
+
+def test_duplicate_pal_adds_copy_and_renames_with_nickname():
+    source = MagicMock()
+    source.NickName = "Sparky"
+    source.DisplayName = "Foxparks"
+    source._pal_obj = {"obj": "source"}
+    new_pal = MagicMock()
+    sm, manager = _sm_for_duplicate(source, new_pal)
+    result = sm.duplicate_pal("uid-1", "pal-1")
+    manager.add_pal.assert_called_once_with("uid-1", source._pal_obj)
+    assert result is new_pal
+    assert new_pal.NickName == "Sparky (copy)"
+
+
+def test_duplicate_pal_uses_species_name_when_no_nickname():
+    source = MagicMock()
+    source.NickName = ""
+    source.DisplayName = "Foxparks"
+    source._pal_obj = {"obj": "source"}
+    new_pal = MagicMock()
+    sm, _ = _sm_for_duplicate(source, new_pal)
+    sm.duplicate_pal("uid-1", "pal-1")
+    assert new_pal.NickName == "Foxparks (copy)"
+
+
+def test_duplicate_pal_base_worker_raises_pal_edit_error():
+    sm = SaveManager.__new__(SaveManager)
+    sm._manager = MagicMock()
+    with pytest.raises(PalEditError):
+        sm.duplicate_pal("PAL_BASE_WORKER_BTN", "pal-1")
+
+
+def test_duplicate_pal_full_palbox_raises_pal_edit_error():
+    source = MagicMock()
+    source.NickName = "Sparky"
+    source.DisplayName = "Foxparks"
+    source._pal_obj = {"obj": "source"}
+    sm, _ = _sm_for_duplicate(source, None)
+    with pytest.raises(PalEditError, match="full"):
+        sm.duplicate_pal("uid-1", "pal-1")
+
+
+def test_duplicate_pal_unknown_player_raises_value_error():
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    manager.get_player.return_value = None
+    sm._manager = manager
+    with pytest.raises(ValueError, match="Player"):
+        sm.duplicate_pal("uid-x", "pal-1")
+
+
+def test_duplicate_pal_unknown_pal_raises_value_error():
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    player = MagicMock()
+    player.get_pal.return_value = None
+    manager.get_player.return_value = player
+    sm._manager = manager
+    with pytest.raises(ValueError, match="Pal"):
+        sm.duplicate_pal("uid-1", "pal-x")

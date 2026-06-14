@@ -5,6 +5,7 @@ from backend.models.saves import (
     PlayerSummary,
     PalSummary,
     PalPatch,
+    PalDuplicate,
     PassiveOption,
     ActiveSkillOption,
 )
@@ -151,6 +152,29 @@ def patch_pal(instance_id: str, body: PalPatch):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return {"ok": True}
+
+
+@router.post("/pals/{instance_id}/duplicate", response_model=PalSummary)
+def duplicate_pal(instance_id: str, body: PalDuplicate):
+    _assert_stopped()
+    sm = _get_save_manager()
+    from backend.services.save_manager import PalEditError
+    try:
+        pal = sm.duplicate_pal(body.player_uid, instance_id)
+    except PalEditError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return PalSummary(
+        instance_id=str(pal.InstanceId),
+        player_uid=body.player_uid,
+        display_name=pal.DisplayName,
+        nickname=pal.NickName or "",
+        level=pal.Level or 1,
+        gender=pal.Gender.value if pal.Gender else None,
+        is_unref=pal.is_unreferenced_pal,
+        in_owner_palbox=pal.in_owner_palbox,
+    )
 
 
 @router.delete("/pals/{instance_id}")
