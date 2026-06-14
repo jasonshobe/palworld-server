@@ -81,3 +81,13 @@ export interface ActiveSkillOption {
   is_unique: boolean
   invalid: boolean
 }
+
+export interface ModInfo {
+  path: string
+  size: number
+  installed: boolean
+}
+
+export interface ModsResponse {
+  mods: ModInfo[]
+}
