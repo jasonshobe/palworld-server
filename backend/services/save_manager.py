@@ -90,7 +90,10 @@ class SaveManager:
             case "pop_MasteredWaza":
                 pal.pop_MasteredWaza(item=value)
             case "set_Suitability":
-                pal.set_WorkSuitability(value["name"], value["level"])
+                from backend.services import pal_data
+                pal.set_WorkSuitability(
+                    pal_data.suitability_to_internal(value["name"]), value["level"]
+                )
             case "HasWorkerSick" | "IsFaintedPal" | "heal_pal":
                 pal.heal_pal()
             case _:

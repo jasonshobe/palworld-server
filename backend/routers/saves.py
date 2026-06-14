@@ -135,7 +135,7 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
         "is_boss": pal.IsBOSS or False,
         "is_tower": pal.IsTower or False,
         "is_favorite": pal.IsFavoritePal or False,
-        "suitabilities": pal.WorkSuitabilities or {},
+        "suitabilities": pal_data.suitabilities_to_names(pal.WorkSuitabilities),
     }
 
 

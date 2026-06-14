@@ -88,7 +88,8 @@ def _make_pal():
     pal.IsBOSS = False
     pal.IsTower = False
     pal.IsFavoritePal = True
-    pal.WorkSuitabilities = {"Watering": 2}
+    # The library keys WorkSuitabilities by the full enum value.
+    pal.WorkSuitabilities = {"EPalWorkSuitability::Watering": 2}
     return pal
 
 
@@ -106,6 +107,7 @@ def test_get_pal_returns_extended_fields(client, mock_save_manager, monkeypatch)
     assert data["full_stomach"] == 150.0
     assert data["max_full_stomach"] == 300
     assert data["is_favorite"] is True
+    # The endpoint normalizes library keys to the bare names the UI expects.
     assert data["suitabilities"] == {"Watering": 2}
 
 
