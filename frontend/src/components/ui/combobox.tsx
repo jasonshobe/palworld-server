@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { Popover } from "radix-ui"
+import { ChevronsUpDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -74,23 +75,38 @@ export default function Combobox({
     <div className="flex gap-2 items-center">
       <Popover.Root open={open && !disabled} onOpenChange={setOpen}>
         <Popover.Anchor asChild>
-          <Input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setSelected("")
-              setHighlight(0)
-              setOpen(true)
-            }}
-            onFocus={() => { setOpen(true); setHighlight(0) }}
-            onKeyDown={onInputKeyDown}
-            disabled={disabled}
-            placeholder={placeholder ?? "Search…"}
-            className="h-7 text-sm flex-1"
-            role="combobox"
-            aria-expanded={open}
-            aria-activedescendant={open && visible[highlight] ? `opt-${visible[highlight].value}` : undefined}
-          />
+          <div className="relative flex-1">
+            <Input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setSelected("")
+                setHighlight(0)
+                setOpen(true)
+              }}
+              onFocus={() => { setOpen(true); setHighlight(0) }}
+              onClick={() => setOpen(true)}
+              onKeyDown={onInputKeyDown}
+              disabled={disabled}
+              placeholder={placeholder ?? "Search…"}
+              className="h-7 text-sm w-full pr-7"
+              role="combobox"
+              aria-expanded={open}
+              aria-activedescendant={open && visible[highlight] ? `opt-${visible[highlight].value}` : undefined}
+            />
+            <Popover.Trigger asChild>
+              <button
+                type="button"
+                tabIndex={-1}
+                disabled={disabled}
+                aria-label="Toggle options"
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+              >
+                <ChevronsUpDown className="size-3.5" />
+              </button>
+            </Popover.Trigger>
+          </div>
         </Popover.Anchor>
         <Popover.Portal>
           <Popover.Content

@@ -44,6 +44,18 @@ describe("Combobox", () => {
     expect(onAdd).toHaveBeenCalledWith("c")
   })
 
+  it("opens the full list via the toggle button without typing, and can browse to add", () => {
+    const onAdd = vi.fn()
+    render(<Combobox options={options} onAdd={onAdd} />)
+    expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText("Toggle options"))
+    expect(screen.getByText("Alpha")).toBeInTheDocument()
+    expect(screen.getByText("Bravo")).toBeInTheDocument()
+    fireEvent.click(screen.getByText("Charlie"))
+    fireEvent.click(screen.getByText("Add"))
+    expect(onAdd).toHaveBeenCalledWith("c")
+  })
+
   it("disables Add when no options match", () => {
     render(<Combobox options={options} onAdd={vi.fn()} />)
     fireEvent.change(screen.getByPlaceholderText("Search…"), { target: { value: "zzz" } })
