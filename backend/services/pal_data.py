@@ -1,9 +1,10 @@
 from functools import lru_cache
 
 # Fixed set of Palworld work suitabilities (PalSuitability enum names upstream).
+# OilExtraction is intentionally omitted — it exists in the enum but is unused by the game.
 SUITABILITIES = [
     "EmitFlame", "Watering", "Seeding", "GenerateElectricity", "Handcraft",
-    "Collection", "Deforest", "Mining", "OilExtraction", "ProductMedicine",
+    "Collection", "Deforest", "Mining", "ProductMedicine",
     "Cool", "Transport", "MonsterFarm",
 ]
 
