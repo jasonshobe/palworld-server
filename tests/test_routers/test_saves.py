@@ -170,3 +170,49 @@ def test_data_suitabilities_endpoint(client, monkeypatch):
     resp = client.get("/api/saves/data/suitabilities")
     assert resp.status_code == 200
     assert resp.json() == ["Watering", "Mining"]
+
+
+def _make_new_pal():
+    pal = MagicMock()
+    pal.InstanceId = "pal-2"
+    pal.DisplayName = "Foxparks"
+    pal.NickName = "Sparky (copy)"
+    pal.Level = 5
+    pal.Gender = MagicMock(value="Male")
+    pal.is_unreferenced_pal = False
+    pal.in_owner_palbox = True
+    return pal
+
+
+def test_duplicate_pal_returns_new_summary(client, mock_save_manager):
+    mock_save_manager.duplicate_pal.return_value = _make_new_pal()
+    resp = client.post("/api/saves/pals/pal-1/duplicate", json={"player_uid": "uid-1"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["instance_id"] == "pal-2"
+    assert data["nickname"] == "Sparky (copy)"
+    assert data["player_uid"] == "uid-1"
+    mock_save_manager.duplicate_pal.assert_called_once_with("uid-1", "pal-1")
+
+
+def test_duplicate_pal_full_palbox_returns_409(client, mock_save_manager):
+    from backend.services.save_manager import PalEditError
+    mock_save_manager.duplicate_pal.side_effect = PalEditError("Pal box is full")
+    resp = client.post("/api/saves/pals/pal-1/duplicate", json={"player_uid": "uid-1"})
+    assert resp.status_code == 409
+    assert "full" in resp.json()["detail"].lower()
+
+
+def test_duplicate_pal_unknown_returns_404(client, mock_save_manager):
+    mock_save_manager.duplicate_pal.side_effect = ValueError("Pal not found")
+    resp = client.post("/api/saves/pals/pal-1/duplicate", json={"player_uid": "uid-1"})
+    assert resp.status_code == 404
+
+
+def test_duplicate_pal_409_when_server_running(client):
+    import backend.main as main_mod
+    m = MagicMock()
+    m.state = ServerState.RUNNING
+    main_mod.server_manager = m
+    resp = client.post("/api/saves/pals/pal-1/duplicate", json={"player_uid": "uid-1"})
+    assert resp.status_code == 409

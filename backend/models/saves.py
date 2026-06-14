@@ -29,6 +29,10 @@ class PalPatch(BaseModel):
     value: object
 
 
+class PalDuplicate(BaseModel):
+    player_uid: str
+
+
 class PassiveOption(BaseModel):
     internal_name: str
     label: str
