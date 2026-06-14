@@ -104,6 +104,14 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
         "computed_max_hp": pal.ComputedMaxHP,
         "computed_attack": pal.ComputedAttack,
         "computed_defense": pal.ComputedDefense,
+        "friendship_level": pal.FriendshipLevel or 0,
+        "sanity": pal.SanityValue,
+        "full_stomach": pal.FullStomach,
+        "is_rare": pal.IsRarePal or False,
+        "is_boss": pal.IsBOSS or False,
+        "is_tower": pal.IsTower or False,
+        "is_favorite": pal.IsFavoritePal or False,
+        "suitabilities": pal.WorkSuitabilities or {},
     }
 
 
@@ -111,8 +119,11 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
 def patch_pal(instance_id: str, body: PalPatch):
     _assert_stopped()
     sm = _get_save_manager()
+    from backend.services.save_manager import PalEditError
     try:
         sm.set_pal_attr(body.player_uid or "PAL_BASE_WORKER_BTN", instance_id, body.key, body.value)
+    except PalEditError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return {"ok": True}
