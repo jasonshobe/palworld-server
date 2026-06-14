@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
 from backend.middleware.auth import AuthMiddleware, require_auth
+from backend.spa_static import SpaStaticFiles
 from backend.services.mod_manager import ModManager
 from backend.services.server_manager import ServerManager
 
@@ -40,4 +40,4 @@ app.include_router(mods.router, dependencies=_protected)
 
 static_dir = Path(__file__).parent / "static"
 if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    app.mount("/", SpaStaticFiles(directory=str(static_dir), html=True), name="static")
