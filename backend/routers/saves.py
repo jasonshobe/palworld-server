@@ -1,6 +1,14 @@
 from fastapi import APIRouter, HTTPException, Query
 from backend.models.server import ServerState
-from backend.models.saves import PlayersResponse, PlayerSummary, PalSummary, PalPatch
+from backend.models.saves import (
+    PlayersResponse,
+    PlayerSummary,
+    PalSummary,
+    PalPatch,
+    PassiveOption,
+    ActiveSkillOption,
+)
+from backend.services import pal_data
 
 router = APIRouter(prefix="/api/saves", tags=["saves"])
 
@@ -68,6 +76,21 @@ def get_pals(player_uid: str = Query(...)):
     ]
 
 
+@router.get("/data/passives", response_model=list[PassiveOption])
+def data_passives():
+    return pal_data.get_passives()
+
+
+@router.get("/data/active-skills", response_model=list[ActiveSkillOption])
+def data_active_skills():
+    return pal_data.get_active_skills()
+
+
+@router.get("/data/suitabilities", response_model=list[str])
+def data_suitabilities():
+    return pal_data.get_suitabilities()
+
+
 @router.get("/pals/{instance_id}")
 def get_pal(instance_id: str, player_uid: str = Query(...)):
     sm = _get_save_manager()
@@ -104,6 +127,15 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
         "computed_max_hp": pal.ComputedMaxHP,
         "computed_attack": pal.ComputedAttack,
         "computed_defense": pal.ComputedDefense,
+        "friendship_level": pal.FriendshipLevel or 0,
+        "sanity": pal.SanityValue,
+        "full_stomach": pal.FullStomach,
+        "max_full_stomach": pal_data.get_pal_food_max(pal.DataAccessKey),
+        "is_rare": pal.IsRarePal or False,
+        "is_boss": pal.IsBOSS or False,
+        "is_tower": pal.IsTower or False,
+        "is_favorite": pal.IsFavoritePal or False,
+        "suitabilities": pal.WorkSuitabilities or {},
     }
 
 
@@ -111,8 +143,11 @@ def get_pal(instance_id: str, player_uid: str = Query(...)):
 def patch_pal(instance_id: str, body: PalPatch):
     _assert_stopped()
     sm = _get_save_manager()
+    from backend.services.save_manager import PalEditError
     try:
         sm.set_pal_attr(body.player_uid or "PAL_BASE_WORKER_BTN", instance_id, body.key, body.value)
+    except PalEditError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return {"ok": True}

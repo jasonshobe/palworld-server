@@ -7,6 +7,10 @@ try:
 except ImportError:
     PPESaveManager = None
 
+class PalEditError(Exception):
+    """Raised when a Pal edit is rejected by the library (list full, duplicate, unknown)."""
+
+
 SAVE_BASE = Path("/palworld/Pal/Saved/SaveGames/0")
 # Palworld dedicated servers name save dirs as 32 hex chars with no dashes
 # (e.g. 01FA6B67A43540259077D0C69D58B4D1); other tools may use the dashed
@@ -62,7 +66,35 @@ class SaveManager:
             pal = player.get_pal(instance_id)
         if pal is None:
             raise ValueError(f"Pal {instance_id} not found")
-        setattr(pal, key, value)
+
+        match key:
+            case "add_PassiveSkillList":
+                if not pal.add_PassiveSkillList(value, True):
+                    raise PalEditError(
+                        f"Cannot add passive '{value}': already has 4, duplicate, or unknown skill."
+                    )
+            case "pop_PassiveSkillList":
+                pal.pop_PassiveSkillList(item=value)
+            case "add_EquipWaza":
+                if not pal.add_EquipWaza(value, True):
+                    raise PalEditError(
+                        f"Cannot equip '{value}': already has 3 equipped, duplicate, or unknown skill."
+                    )
+            case "pop_EquipWaza":
+                pal.pop_EquipWaza(item=value)
+            case "add_MasteredWaza":
+                if not pal.add_MasteredWaza(value):
+                    raise PalEditError(
+                        f"Cannot add mastered skill '{value}': duplicate or unknown skill."
+                    )
+            case "pop_MasteredWaza":
+                pal.pop_MasteredWaza(item=value)
+            case "set_Suitability":
+                pal.set_WorkSuitability(value["name"], value["level"])
+            case "HasWorkerSick" | "IsFaintedPal" | "heal_pal":
+                pal.heal_pal()
+            case _:
+                setattr(pal, key, value)
 
     def commit(self) -> None:
         self._manager.save(str(self._save_path))

@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
-from backend.services.save_manager import SaveManager, find_save_path
+from backend.services.save_manager import SaveManager, find_save_path, PalEditError
 
 
 @pytest.fixture
@@ -67,3 +67,68 @@ def test_save_manager_get_players_calls_library(save_dir):
 
     mock_ppe_manager.get_players.assert_called_once()
     assert players == []
+
+
+def _sm_with_pal(pal):
+    """Build a SaveManager bypassing __init__, wired to a mock library manager."""
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    player = MagicMock()
+    player.get_pal.return_value = pal
+    manager.get_player.return_value = player
+    manager.get_working_pal.return_value = pal
+    sm._manager = manager
+    return sm
+
+
+def test_set_pal_attr_scalar_uses_setattr():
+    pal = MagicMock()
+    sm = _sm_with_pal(pal)
+    sm.set_pal_attr("uid-1", "pal-1", "Level", 42)
+    assert pal.Level == 42
+
+
+def test_set_pal_attr_add_passive_calls_method():
+    pal = MagicMock()
+    pal.add_PassiveSkillList.return_value = True
+    sm = _sm_with_pal(pal)
+    sm.set_pal_attr("uid-1", "pal-1", "add_PassiveSkillList", "PassiveSkill_Legend")
+    pal.add_PassiveSkillList.assert_called_once_with("PassiveSkill_Legend", True)
+
+
+def test_set_pal_attr_add_passive_full_raises_pal_edit_error():
+    pal = MagicMock()
+    pal.add_PassiveSkillList.return_value = False
+    sm = _sm_with_pal(pal)
+    with pytest.raises(PalEditError):
+        sm.set_pal_attr("uid-1", "pal-1", "add_PassiveSkillList", "PassiveSkill_Legend")
+
+
+def test_set_pal_attr_pop_equip_waza_calls_method():
+    pal = MagicMock()
+    sm = _sm_with_pal(pal)
+    sm.set_pal_attr("uid-1", "pal-1", "pop_EquipWaza", "EPalWazaID::Fire_FlareArrow")
+    pal.pop_EquipWaza.assert_called_once_with(item="EPalWazaID::Fire_FlareArrow")
+
+
+def test_set_pal_attr_set_suitability_calls_method():
+    pal = MagicMock()
+    sm = _sm_with_pal(pal)
+    sm.set_pal_attr("uid-1", "pal-1", "set_Suitability", {"name": "Watering", "level": 3})
+    pal.set_WorkSuitability.assert_called_once_with("Watering", 3)
+
+
+def test_set_pal_attr_heal_calls_heal_pal():
+    pal = MagicMock()
+    sm = _sm_with_pal(pal)
+    sm.set_pal_attr("uid-1", "pal-1", "IsFaintedPal", False)
+    pal.heal_pal.assert_called_once()
+
+
+def test_set_pal_attr_unknown_player_raises_value_error():
+    sm = SaveManager.__new__(SaveManager)
+    manager = MagicMock()
+    manager.get_player.return_value = None
+    sm._manager = manager
+    with pytest.raises(ValueError, match="Player"):
+        sm.set_pal_attr("uid-x", "pal-1", "Level", 1)
