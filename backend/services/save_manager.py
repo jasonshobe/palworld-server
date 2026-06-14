@@ -94,7 +94,12 @@ class SaveManager:
             new_pal.equip_all_pal_attacks()
             new_pal.NickName = None
         except Exception:
-            self._manager.delete_pal(str(new_pal.InstanceId))
+            # Best-effort cleanup; never let a delete failure mask the original
+            # error that triggered the rollback.
+            try:
+                self._manager.delete_pal(str(new_pal.InstanceId))
+            except Exception:
+                pass
             raise
         return new_pal
 

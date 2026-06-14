@@ -282,6 +282,18 @@ def test_create_pal_rolls_back_when_mutation_fails():
     manager.delete_pal.assert_called_once_with("pal-new")
 
 
+def test_create_pal_rollback_cleanup_error_does_not_mask_original():
+    new_pal = MagicMock()
+    new_pal.InstanceId = "pal-new"
+    new_pal.equip_all_pal_attacks.side_effect = RuntimeError("boom")
+    sm, manager = _sm_for_create(new_pal)
+    # A failure while cleaning up the half-built pal must not replace the
+    # original error that triggered the rollback.
+    manager.delete_pal.side_effect = RuntimeError("delete failed")
+    with pytest.raises(RuntimeError, match="boom"):
+        sm.create_pal("uid-1", "Foxparks")
+
+
 def test_get_species_excludes_humans_and_invalid_and_disambiguates():
     from backend.services import pal_data
     fake = MagicMock()
