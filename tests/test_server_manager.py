@@ -67,17 +67,86 @@ async def test_start_sets_running_state(manager, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_stop_terminates_process_and_sets_stopped(manager):
+async def test_start_launches_in_new_session(manager, tmp_path):
+    # PalServer.sh is a wrapper that launches the real binary without `exec`.
+    # The server must run in its own session/process group so stop() can signal
+    # the whole tree; otherwise the game binary is orphaned on stop and keeps
+    # autosaving over save edits.
+    import backend.main as main
+    binary = tmp_path / "PalServer.sh"
+    binary.touch()
+
     mock_proc = MagicMock()
-    mock_proc.terminate = MagicMock()
+    mock_proc.stdout.readline = AsyncMock(return_value=b"")
+    mock_proc.wait = AsyncMock(return_value=0)
+    mock_proc.returncode = 0
+
+    with patch("backend.services.server_manager.PALWORLD_BINARY", str(binary)), \
+         patch("asyncio.create_subprocess_exec", return_value=mock_proc) as spawn, \
+         patch.object(main, "mod_manager", MagicMock()):
+        await manager.start()
+
+    assert spawn.call_args.kwargs.get("start_new_session") is True
+
+
+@pytest.mark.asyncio
+async def test_stop_signals_whole_process_group_and_sets_stopped(manager):
+    # Must SIGTERM the process group (the wrapper shell + the orphan-prone game
+    # binary), not just the wrapper, so the binary actually shuts down.
+    import signal
+    mock_proc = MagicMock()
+    mock_proc.pid = 4321
     mock_proc.wait = AsyncMock(return_value=0)
     manager.state = ServerState.RUNNING
     manager._process = mock_proc
 
-    await manager.stop()
+    with patch("os.getpgid", return_value=4321) as getpgid, \
+         patch("os.killpg") as killpg:
+        await manager.stop()
 
     assert manager.state == ServerState.STOPPED
-    mock_proc.terminate.assert_called_once()
+    getpgid.assert_called_once_with(4321)
+    killpg.assert_called_once_with(4321, signal.SIGTERM)
+
+
+@pytest.mark.asyncio
+async def test_stop_sigkills_group_on_graceful_timeout(manager):
+    import signal
+    mock_proc = MagicMock()
+    mock_proc.pid = 4321
+    # First wait (graceful) times out; second wait (after SIGKILL) returns.
+    mock_proc.wait = AsyncMock(side_effect=[asyncio.TimeoutError(), 0])
+    manager.state = ServerState.RUNNING
+    manager._process = mock_proc
+
+    async def fake_wait_for(coro, timeout):
+        return await coro  # let the AsyncMock side_effect drive the outcome
+
+    with patch("os.getpgid", return_value=4321), \
+         patch("os.killpg") as killpg, \
+         patch("asyncio.wait_for", side_effect=fake_wait_for):
+        await manager.stop()
+
+    assert manager.state == ServerState.STOPPED
+    assert killpg.call_args_list == [
+        ((4321, signal.SIGTERM),),
+        ((4321, signal.SIGKILL),),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_stop_when_process_already_gone(manager):
+    # If the group is already gone, stop() must still settle to STOPPED.
+    mock_proc = MagicMock()
+    mock_proc.pid = 4321
+    mock_proc.wait = AsyncMock(return_value=0)
+    manager.state = ServerState.RUNNING
+    manager._process = mock_proc
+
+    with patch("os.getpgid", side_effect=ProcessLookupError()):
+        await manager.stop()
+
+    assert manager.state == ServerState.STOPPED
 
 
 @pytest.mark.asyncio

@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import shlex
+import signal
 from collections import deque
 from pathlib import Path
 
@@ -107,10 +108,16 @@ class ServerManager:
                 *(extra_args or []),
                 *env_opts,
             ]
+            # PALWORLD_BINARY is PalServer.sh, a wrapper that launches the real
+            # PalServer-Linux-Shipping binary *without* exec. Run it in its own
+            # session (new process group) so stop() can signal the whole tree;
+            # otherwise SIGTERM only hits the wrapper and the game binary is
+            # orphaned, keeps autosaving, and silently overwrites save edits.
             proc = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                start_new_session=True,
             )
             self._process = proc
             self.state = ServerState.RUNNING
@@ -127,13 +134,25 @@ class ServerManager:
         self._push_log("[controller] Stopping Palworld server...")
 
         try:
-            self._process.terminate()
+            # Signal the whole process group (wrapper shell + game binary), not
+            # just the wrapper, so the game binary actually shuts down (it saves
+            # cleanly on SIGTERM) instead of being orphaned to PID 1.
             try:
-                await asyncio.wait_for(self._process.wait(), timeout=30.0)
-            except asyncio.TimeoutError:
-                self._push_log("[controller] Graceful shutdown timed out, killing...")
-                self._process.kill()
-                await self._process.wait()
+                pgid = os.getpgid(self._process.pid)
+            except ProcessLookupError:
+                pgid = None
+
+            if pgid is not None:
+                os.killpg(pgid, signal.SIGTERM)
+                try:
+                    await asyncio.wait_for(self._process.wait(), timeout=30.0)
+                except asyncio.TimeoutError:
+                    self._push_log("[controller] Graceful shutdown timed out, killing...")
+                    try:
+                        os.killpg(pgid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    await self._process.wait()
         finally:
             self._push_log("[controller] Server stopped.")
             self.state = ServerState.STOPPED
